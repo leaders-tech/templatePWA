@@ -8,6 +8,10 @@
 - Keep browser API calls POST-based in this template — that is a deliberate teaching choice.
 - Student-facing frontend config belongs in the root `.env` and `.docker.env` files, not in frontend-only env files.
 - Keep frontend JSON calls on `/api/...` and keep websocket on `/ws` so same-origin production routing stays simple.
+- Hidden frontend agent commands:
+  - `make afront`, `make aopen`, `make astop`
+  - `make abrowser SCRIPT=path/to/scenario.mjs`
+- Hidden frontend browser checks should prefer the agent frontend on `.agent.env` ports instead of the student-facing local ports when both may be active.
 
 ## File layout
 

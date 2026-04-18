@@ -46,6 +46,16 @@
 - Do not edit dependency lists by hand unless there is a strong reason and it is explained.
 - Student-facing configuration belongs only in the root `.env` and `.docker.env` files.
 - Do not add new user-tuned ports, URLs, secrets, modes, or project names to `Makefile`, compose files, Playwright configs, or Dockerfiles.
+- Hidden agent-only configuration belongs in the root `.agent.env` file.
+- When normal human local ports are busy, prefer the hidden agent runtime instead of changing the student-facing commands.
+- Hidden agent runtime commands:
+  - `make aback`, `make aback-once`, `make afront`, `make aopen`, `make astop`, `make aclean`
+  - `make abrowser SCRIPT=path/to/scenario.mjs`
+  - `make alogin USER=user PASS=user`
+  - `make apost API_PATH=/api/... BODY='{}'`
+  - `make ahealth`, `make asql SQL='select ...'`, `make adb-path`
+- `aback` and `aback-once` must always recreate the hidden agent DB from the normal local DB before startup.
+- Hidden agent runtime files live under `.agent/`.
 - Keep `.docker.env` as the Docker config filename for this repo. Do not rename it to `.env.docker` unless the user explicitly asks.
 - Keep LAN dev mode intentionally simple: prefer the explicit macOS Wi-Fi `en0` helper over generic network auto-detection.
 - Keep LAN ports separate from the default localhost ports unless the user asks otherwise.

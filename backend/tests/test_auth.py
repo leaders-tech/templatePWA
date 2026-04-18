@@ -90,9 +90,9 @@ async def test_expired_access_cookie_returns_401(client, create_user) -> None:
 
 @pytest.mark.asyncio
 async def test_auth_error_keeps_cors_headers_for_localhost_origin(client) -> None:
-    response = await client.post("/api/auth/me", json={}, headers={"Origin": "http://localhost:5173"})
+    response = await client.post("/api/auth/me", json={}, headers={"Origin": "http://localhost:5101"})
     assert response.status == 401
-    assert response.headers["Access-Control-Allow-Origin"] == "http://localhost:5173"
+    assert response.headers["Access-Control-Allow-Origin"] == "http://localhost:5101"
     assert response.headers["Access-Control-Allow-Credentials"] == "true"
 
 
@@ -112,7 +112,7 @@ async def test_non_json_write_request_returns_400(client, create_user, auth_head
     response = await client.post(
         "/api/notes/save",
         data="text=bad",
-        headers={"Origin": "http://127.0.0.1:5173", "Content-Type": "application/x-www-form-urlencoded"},
+        headers={"Origin": "http://127.0.0.1:5101", "Content-Type": "application/x-www-form-urlencoded"},
     )
     assert response.status == 400
 
@@ -191,7 +191,7 @@ async def test_dev_seed_only_creates_missing_users(tmp_path, monkeypatch) -> Non
         port=8081,
         db_path=tmp_path / "seed.sqlite3",
         cookie_secret="test-secret",
-        frontend_origin="http://127.0.0.1:5173",
+        frontend_origin="http://127.0.0.1:5101",
     )
     app = create_app(settings)
     calls: list[str] = []
@@ -220,7 +220,7 @@ def test_create_app_refuses_default_secret_in_prod(tmp_path) -> None:
         port=8081,
         db_path=tmp_path / "prod.sqlite3",
         cookie_secret=DEFAULT_COOKIE_SECRET,
-        frontend_origin="http://127.0.0.1:5173",
+        frontend_origin="http://127.0.0.1:5101",
     )
 
     with pytest.raises(ValueError, match="default COOKIE_SECRET"):

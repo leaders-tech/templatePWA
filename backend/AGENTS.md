@@ -9,6 +9,12 @@
 - Keep production same-origin for this template. Do not add cross-origin production CORS unless the architecture changes.
 - Keep browser-facing JSON endpoints as POST routes in this template unless the user explicitly changes that rule.
 - Keep browser-facing JSON endpoints under `/api/...` and keep websocket at `/ws` unless the user explicitly changes the routing model.
+- Hidden backend agent commands:
+  - `make aback`, `make aback-once`, `make astop`
+  - `make alogin USER=user PASS=user`
+  - `make apost API_PATH=/api/... BODY='{}'`
+  - `make ahealth`, `make asql SQL='select ...'`, `make adb-path`
+- Hidden backend agent runtime reads `.agent.env` and always uses a copied DB under `.agent/` instead of the student DB directly.
 - Do not introduce ORM, DI, pydantic, or generic service layers.
 - Add backend tests for each new endpoint, auth rule, DB branch, and error path that matters.
 - After every change, run `uv run pytest` and make sure all tests pass before calling the task done.

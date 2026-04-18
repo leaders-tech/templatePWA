@@ -27,7 +27,7 @@ def test_settings(tmp_path: Path) -> Settings:
         port=8081,
         db_path=tmp_path / "test.sqlite3",
         cookie_secret="test-secret",
-        frontend_origin="http://127.0.0.1:5173",
+        frontend_origin="http://127.0.0.1:5101",
     )
 
 
@@ -48,7 +48,7 @@ async def db(app):
 
 @pytest.fixture
 def auth_headers() -> dict[str, str]:
-    return {"Origin": "http://127.0.0.1:5173"}
+    return {"Origin": "http://127.0.0.1:5101"}
 
 
 @pytest.fixture

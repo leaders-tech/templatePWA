@@ -20,7 +20,7 @@ This is a teaching template for school projects. It has a frontend (the part use
 | **uv** | A tool that downloads Python libraries that the backend needs. |
 | **make** | A shortcut tool. `make setup` is just a shorter way to run several commands at once. |
 | **uv run** | Runs a Python command inside the project's own Python environment. |
-| **localhost** | Your own computer. `http://localhost:5173` means "open port 5173 on my own machine". |
+| **localhost** | Your own computer. `http://localhost:5101` means "open port 5101 on my own machine". |
 
 ---
 
@@ -134,7 +134,7 @@ You need **two terminals** open at the same time — one for the backend, one fo
 make back
 ```
 
-The backend will be available at `http://localhost:8000`.
+The backend will be available at `http://localhost:3101`.
 
 > **With auto-reload:** `make back` already watches for file changes. If you want to run it without auto-reload, use `uv run python -m backend.main`.
 
@@ -144,9 +144,9 @@ The backend will be available at `http://localhost:8000`.
 make front
 ```
 
-The frontend will be available at `http://localhost:5173`.
+The frontend will be available at `http://localhost:5101`.
 
-Open `http://localhost:5173` in your browser to see the app.
+Open `http://localhost:5101` in your browser to see the app.
 
 ### Share the app on the same Wi-Fi
 
@@ -172,8 +172,8 @@ make open-lan
 
 In LAN mode, the app uses these ports:
 
-- frontend: `http://<wifi-ip>:4173`
-- backend: `http://<wifi-ip>:4174`
+- frontend: `http://<wifi-ip>:5104`
+- backend: `http://<wifi-ip>:3104`
 
 Important notes:
 
@@ -201,8 +201,8 @@ These accounts exist only in development mode. They are not in production.
 
 In LAN mode, use the same Wi-Fi IP on both sides:
 
-- frontend URL: `http://<wifi-ip>:4173`
-- backend URL: `http://<wifi-ip>:4174`
+- frontend URL: `http://<wifi-ip>:5104`
+- backend URL: `http://<wifi-ip>:3104`
 
 ---
 
@@ -347,8 +347,8 @@ make open-docker
 ```
 
 Open in browser:
-- Frontend: `http://localhost:8088`
-- Backend health check: `http://localhost:8089/api/health`
+- Frontend: `http://localhost:5105`
+- Backend health check: `http://localhost:3105/api/health`
 
 Stop and remove containers:
 
