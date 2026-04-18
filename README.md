@@ -332,23 +332,34 @@ make test-e2e-docker
 ## Docker (optional, for deployment)
 
 Docker packages the app into containers so it runs the same way everywhere.
-You do not need Docker for local development. Use it when you want to test how the app behaves in production.
+You do not need Docker for local development. Use it when you want to test the production-style container setup or deploy to `tlfpaas`.
 
 All Docker and Dokploy settings live in the root `.docker.env` file.
 Change Docker ports, Docker URLs, Docker secrets, Docker project names, and Docker e2e settings there.
 Do not edit `docker-compose.yml` or the Dockerfiles for normal student configuration.
 
-Quick local test with Docker:
+Quick local browser test with Docker:
 
 ```bash
-make back-docker
 make front-docker
 make open-docker
 ```
 
 Open in browser:
-- Frontend: `http://localhost:5105`
-- Backend health check: `http://localhost:3105/api/health`
+- App: `http://localhost:5105`
+- Health check through the local gateway: `http://localhost:5105/api/health`
+
+`make front-docker` starts a small local gateway so the browser uses the same path-based contract as production:
+
+- `/api/*` -> backend
+- `/ws` -> backend
+- everything else -> frontend
+
+If you want only the backend container running for debugging, you can still use:
+
+```bash
+make back-docker
+```
 
 Stop and remove containers:
 
@@ -382,20 +393,19 @@ Set these values in Dokploy instead of editing `docker-compose.yml`:
 
 | Variable | What it is |
 |----------|------------|
-| `DOCKER_PROJECT_NAME` | Docker Compose project name for the normal app stack |
-| `DOCKER_COOKIE_SECRET` | Secret key for signing cookies — use a long random string |
-| `DOCKER_DB_PATH` | SQLite path inside the backend container |
-| `DOCKER_FRONTEND_PORT` | Published frontend port on the host |
-| `DOCKER_BACKEND_PORT` | Published backend port on the host |
-| `DOCKER_FRONTEND_ORIGIN` | Public URL of the frontend, e.g. `https://myapp.example.com` |
-| `DOCKER_VITE_BACKEND_URL` | Backend origin used at frontend build time |
-| `DOCKER_APP_MODE` | `prod` for production, `dev` to enable demo accounts |
+| `COMPOSE_PROJECT_NAME` | Docker Compose project name for the normal app stack |
+| `COOKIE_SECRET` | Secret key for signing cookies — use a long random string |
+| `DB_PATH` | SQLite path inside the backend container |
+| `FRONTEND_ORIGIN` | Public URL of the app, e.g. `https://myapp.example.com` |
+| `VITE_BACKEND_URL` | Frontend API base path for the built app; keep it at `/api` |
+| `APP_MODE` | `prod` for production, `dev` to enable demo accounts |
 
 Important notes:
 
-- The frontend backend URL is still a build-time value. If `DOCKER_VITE_BACKEND_URL` changes, rebuild the frontend image.
-- Internal container ports stay fixed at `8080` and `8081`. Students should only change the published ports and URLs in `.docker.env`.
-- For same-origin production behind nginx or Traefik, set `DOCKER_VITE_BACKEND_URL` to the same public site origin as `DOCKER_FRONTEND_ORIGIN`.
+- The frontend API base path is still a build-time value. If `VITE_BACKEND_URL` changes, rebuild the frontend image.
+- Internal container ports stay fixed at `8080` and `8081`.
+- For this template, keep `VITE_BACKEND_URL=/api` in both local Docker testing and production.
+- The base `docker-compose.yml` is intentionally platform-safe for `tlfpaas`: it uses `expose`, route labels, and no local-only port publishing.
 
 ### Start the Docker stack
 
@@ -407,6 +417,8 @@ docker compose --env-file .docker.env -f docker-compose.yml up -d --build
 
 That starts the frontend and backend containers. It does not add public one-domain routing by itself.
 
+For local same-origin browser testing, the repo also includes `docker-compose.local.yml`, which adds a small gateway service and the local frontend build arg. The visible `make front-docker` and `make test-e2e-docker` commands use that local overlay automatically.
+
 ### Recommended production routing
 
 Use one public origin and route by path:
@@ -417,12 +429,16 @@ Use one public origin and route by path:
 
 This keeps the production app same-origin, so cookie auth and websocket auth stay simple.
 
-If nginx or Traefik runs on the same host but outside Docker, it can route to:
-
-- `localhost:${DOCKER_FRONTEND_PORT}` for frontend pages
-- `localhost:${DOCKER_BACKEND_PORT}` for backend `/api` and `/ws`
+In `tlfpaas`, the platform does this routing for you by looking at `tlfpaas.route` labels in the base `docker-compose.yml`.
 
 If nginx or Traefik is on the same Docker network, it can route to:
 
 - `frontend:8080`
 - `backend:8081`
+
+### Route roles for other app shapes
+
+- Fullstack app: use `frontend` plus `backend`
+- Single-service web app: one service with `tlfpaas.route=web`
+- Backend-only public app: one service with `tlfpaas.route=backend`, serving only `/api` and `/ws`
+- Worker or bot: no `tlfpaas.route` label

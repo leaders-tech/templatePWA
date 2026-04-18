@@ -57,6 +57,11 @@
 - `aback` and `aback-once` must always recreate the hidden agent DB from the normal local DB before startup.
 - Hidden agent runtime files live under `.agent/`.
 - Keep `.docker.env` as the Docker config filename for this repo. Do not rename it to `.env.docker` unless the user explicitly asks.
+- Keep the base `docker-compose.yml` platform-safe for `tlfpaas`:
+  - no `ports:`
+  - no local-only `build.args`
+  - route-target services use `tlfpaas.route`
+- Keep local Docker-only browser behavior in `docker-compose.local.yml`, not in the base compose file.
 - Keep LAN dev mode intentionally simple: prefer the explicit macOS Wi-Fi `en0` helper over generic network auto-detection.
 - Keep LAN ports separate from the default localhost ports unless the user asks otherwise.
 - Do not expand LAN mode into a multi-interface discovery system unless the user asks for broader network support.

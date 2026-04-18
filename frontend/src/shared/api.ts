@@ -1,6 +1,6 @@
 /*
 This file sends frontend JSON requests to the backend and builds the websocket base URL.
-Edit this file when backend URL rules, shared fetch behavior, or API error parsing changes.
+Edit this file when API path rules, websocket URL rules, shared fetch behavior, or API error parsing changes.
 Copy the helper pattern here when you add another shared browser API helper.
 */
 
@@ -17,15 +17,16 @@ export class ApiError extends Error {
   }
 }
 
-function getBackendBaseUrl(): string {
+function getApiBasePath(): string {
   const configured = (import.meta.env.VITE_BACKEND_URL as string | undefined)?.trim();
   if (configured) {
-    return configured.replace(/\/$/, "");
+    const withLeadingSlash = configured.startsWith("/") ? configured : `/${configured}`;
+    return withLeadingSlash.replace(/\/+$/, "");
   }
-  return window.location.origin;
+  return "/api";
 }
 
-const baseUrl = getBackendBaseUrl();
+const apiBasePath = getApiBasePath();
 
 async function readApiPayload<T>(response: Response): Promise<ApiResponse<T>> {
   const text = await response.text();
@@ -41,7 +42,8 @@ async function readApiPayload<T>(response: Response): Promise<ApiResponse<T>> {
 }
 
 export async function postJson<T>(path: string, body: unknown = {}): Promise<T> {
-  const response = await fetch(`${baseUrl}${path}`, {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const response = await fetch(`${apiBasePath}${normalizedPath}`, {
     method: "POST",
     credentials: "include",
     headers: {
@@ -58,6 +60,6 @@ export async function postJson<T>(path: string, body: unknown = {}): Promise<T> 
 }
 
 export function getWsUrl(): string {
-  const wsBase = baseUrl.replace(/^http/, "ws");
-  return `${wsBase}/ws`;
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${protocol}//${window.location.host}/ws`;
 }

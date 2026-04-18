@@ -20,13 +20,13 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 async function loadCurrentUser(): Promise<User | null> {
   try {
-    const data = await postJson<{ user: User }>("/api/auth/me");
+    const data = await postJson<{ user: User }>("/auth/me");
     return data.user;
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       try {
-        await postJson<{ user: User }>("/api/auth/refresh");
-        const refreshed = await postJson<{ user: User }>("/api/auth/me");
+        await postJson<{ user: User }>("/auth/refresh");
+        const refreshed = await postJson<{ user: User }>("/auth/me");
         return refreshed.user;
       } catch {
         return null;
@@ -56,11 +56,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       loading,
       async login(username: string, password: string) {
-        const data = await postJson<{ user: User }>("/api/auth/login", { username, password });
+        const data = await postJson<{ user: User }>("/auth/login", { username, password });
         setUser(data.user);
       },
       async logout() {
-        await postJson<{ logged_out: boolean }>("/api/auth/logout");
+        await postJson<{ logged_out: boolean }>("/auth/logout");
         setUser(null);
       },
       async reloadUser() {

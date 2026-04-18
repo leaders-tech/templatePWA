@@ -59,7 +59,8 @@ export default defineConfig({
       url: frontendUrl,
       reuseExistingServer: !process.env.CI,
       env: {
-        VITE_BACKEND_URL: backendUrl,
+        VITE_BACKEND_URL: "/api",
+        VITE_DEV_PROXY_TARGET: backendUrl,
       },
     },
   ],

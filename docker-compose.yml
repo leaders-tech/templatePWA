@@ -1,20 +1,22 @@
-# This file connects the frontend and backend deployment containers for Docker or Dokploy.
-# Edit this file only when the container shape changes. Students should change ports and URLs in .docker.env instead.
-# Copy a service block here when you add another small deployment service.
+# This file is the platform-safe Docker shape for tlfpaas and same-origin production routing.
+# Edit this file only when the deployment service list or runtime container contract changes.
+# Copy a service block here when you add another small deployable service.
 services:
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
     environment:
-      APP_MODE: ${DOCKER_APP_MODE}
+      APP_MODE: ${APP_MODE}
       APP_HOST: 0.0.0.0
       APP_PORT: 8081
-      DB_PATH: ${DOCKER_DB_PATH}
-      COOKIE_SECRET: ${DOCKER_COOKIE_SECRET}
-      FRONTEND_ORIGIN: ${DOCKER_FRONTEND_ORIGIN}
-    ports:
-      - "${DOCKER_BACKEND_PORT}:8081"
+      DB_PATH: ${DB_PATH}
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
+    expose:
+      - "8081"
+    labels:
+      tlfpaas.route: "backend"
     restart: unless-stopped
     volumes:
       - sqlite_data:/data
@@ -23,12 +25,12 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        VITE_BACKEND_URL: ${DOCKER_VITE_BACKEND_URL}
     depends_on:
       - backend
-    ports:
-      - "${DOCKER_FRONTEND_PORT}:8080"
+    expose:
+      - "8080"
+    labels:
+      tlfpaas.route: "frontend"
     restart: unless-stopped
 
 volumes:

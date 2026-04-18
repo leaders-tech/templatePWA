@@ -7,15 +7,11 @@ ifneq (,$(wildcard .env))
 include .env
 endif
 
-ifneq (,$(wildcard .docker.env))
-include .docker.env
-endif
-
 ifneq (,$(wildcard .agent.env))
 include .agent.env
 endif
 
-DOCKER_COMPOSE := ./scripts/docker-compose.sh --env-file .docker.env -p $(DOCKER_PROJECT_NAME) -f docker-compose.yml
+DOCKER_COMPOSE := ./scripts/docker-compose.sh --env-file .docker.env -f docker-compose.yml -f docker-compose.local.yml
 LOCAL_BACKEND_URL := http://$(APP_PUBLIC_HOST):$(APP_PORT)
 LOCAL_FRONTEND_URL := http://$(FRONTEND_PUBLIC_HOST):$(FRONTEND_PORT)
 WIFI_IP := $(shell if [ -n "$(WIFI_INTERFACE)" ]; then ipconfig getifaddr "$(WIFI_INTERFACE)" 2>/dev/null; fi)
@@ -77,7 +73,7 @@ back-once:
 
 front:
 	$(CHECK_LOCAL_ENV)
-	cd frontend && VITE_BACKEND_URL=$(LOCAL_BACKEND_URL) npm run dev -- --host $(FRONTEND_BIND_HOST) --port $(FRONTEND_PORT)
+	cd frontend && VITE_BACKEND_URL=/api VITE_DEV_PROXY_TARGET=$(LOCAL_BACKEND_URL) npm run dev -- --host $(FRONTEND_BIND_HOST) --port $(FRONTEND_PORT)
 
 open:
 	$(CHECK_LOCAL_ENV)
@@ -91,7 +87,7 @@ back-lan:
 front-lan:
 	$(CHECK_LOCAL_ENV)
 	$(CHECK_WIFI_IP)
-	cd frontend && VITE_BACKEND_URL=$(LAN_BACKEND_URL) npm run dev -- --host 0.0.0.0 --port $(LAN_FRONTEND_PORT)
+	cd frontend && VITE_BACKEND_URL=/api VITE_DEV_PROXY_TARGET=$(LAN_BACKEND_URL) npm run dev -- --host 0.0.0.0 --port $(LAN_FRONTEND_PORT)
 
 open-lan:
 	$(CHECK_LOCAL_ENV)
@@ -121,7 +117,7 @@ afront:
 	$(CHECK_AGENT_ENV)
 	mkdir -p "$(AGENT_RUNTIME_DIR_ABS)"
 	./scripts/kill_port.sh "$(AGENT_FRONTEND_PORT)"
-	cd frontend && echo $$$$ > "$(AGENT_FRONTEND_PID)" && exec env VITE_BACKEND_URL=$(AGENT_BACKEND_URL) npm run dev -- --host $(AGENT_FRONTEND_HOST) --port $(AGENT_FRONTEND_PORT)
+	cd frontend && echo $$$$ > "$(AGENT_FRONTEND_PID)" && exec env VITE_BACKEND_URL=/api VITE_DEV_PROXY_TARGET=$(AGENT_BACKEND_URL) npm run dev -- --host $(AGENT_FRONTEND_HOST) --port $(AGENT_FRONTEND_PORT)
 
 aopen:
 	$(CHECK_AGENT_ENV)
@@ -176,11 +172,11 @@ back-docker:
 
 front-docker:
 	$(CHECK_DOCKER_ENV)
-	$(DOCKER_COMPOSE) up -d --build frontend
+	$(DOCKER_COMPOSE) up -d --build frontend gateway
 
 open-docker:
 	$(CHECK_DOCKER_ENV)
-	open $(DOCKER_FRONTEND_ORIGIN)
+	/bin/sh -c 'set -a; . ./.docker.env; set +a; exec open "$$FRONTEND_ORIGIN"'
 
 stop-docker:
 	$(CHECK_DOCKER_ENV)

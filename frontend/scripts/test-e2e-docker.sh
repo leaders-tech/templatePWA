@@ -20,27 +20,25 @@ set -a
 . "${DOCKER_ENV_FILE}"
 set +a
 
-: "${DOCKER_E2E_PROJECT_NAME:?Missing DOCKER_E2E_PROJECT_NAME in .docker.env.}"
-: "${DOCKER_E2E_APP_MODE:?Missing DOCKER_E2E_APP_MODE in .docker.env.}"
-: "${DOCKER_E2E_COOKIE_SECRET:?Missing DOCKER_E2E_COOKIE_SECRET in .docker.env.}"
-: "${DOCKER_E2E_FRONTEND_PORT:?Missing DOCKER_E2E_FRONTEND_PORT in .docker.env.}"
-: "${DOCKER_E2E_BACKEND_PORT:?Missing DOCKER_E2E_BACKEND_PORT in .docker.env.}"
-: "${DOCKER_E2E_FRONTEND_ORIGIN:?Missing DOCKER_E2E_FRONTEND_ORIGIN in .docker.env.}"
-: "${DOCKER_E2E_VITE_BACKEND_URL:?Missing DOCKER_E2E_VITE_BACKEND_URL in .docker.env.}"
-: "${DOCKER_E2E_FRONTEND_URL:?Missing DOCKER_E2E_FRONTEND_URL in .docker.env.}"
+: "${E2E_COMPOSE_PROJECT_NAME:?Missing E2E_COMPOSE_PROJECT_NAME in .docker.env.}"
+: "${E2E_APP_MODE:?Missing E2E_APP_MODE in .docker.env.}"
+: "${E2E_COOKIE_SECRET:?Missing E2E_COOKIE_SECRET in .docker.env.}"
+: "${E2E_FRONTEND_ORIGIN:?Missing E2E_FRONTEND_ORIGIN in .docker.env.}"
+: "${E2E_VITE_BACKEND_URL:?Missing E2E_VITE_BACKEND_URL in .docker.env.}"
+: "${E2E_GATEWAY_PORT:?Missing E2E_GATEWAY_PORT in .docker.env.}"
+: "${E2E_FRONTEND_URL:?Missing E2E_FRONTEND_URL in .docker.env.}"
 
-PROJECT_NAME="${DOCKER_E2E_PROJECT_NAME}"
-export DOCKER_PROJECT_NAME="${DOCKER_E2E_PROJECT_NAME}"
-export DOCKER_APP_MODE="${DOCKER_E2E_APP_MODE}"
-export DOCKER_COOKIE_SECRET="${DOCKER_E2E_COOKIE_SECRET}"
-export DOCKER_FRONTEND_PORT="${DOCKER_E2E_FRONTEND_PORT}"
-export DOCKER_BACKEND_PORT="${DOCKER_E2E_BACKEND_PORT}"
-export DOCKER_FRONTEND_ORIGIN="${DOCKER_E2E_FRONTEND_ORIGIN}"
-export DOCKER_VITE_BACKEND_URL="${DOCKER_E2E_VITE_BACKEND_URL}"
-export PW_DOCKER_FRONTEND_URL="${DOCKER_E2E_FRONTEND_URL}"
+PROJECT_NAME="${E2E_COMPOSE_PROJECT_NAME}"
+export COMPOSE_PROJECT_NAME="${E2E_COMPOSE_PROJECT_NAME}"
+export APP_MODE="${E2E_APP_MODE}"
+export COOKIE_SECRET="${E2E_COOKIE_SECRET}"
+export FRONTEND_ORIGIN="${E2E_FRONTEND_ORIGIN}"
+export VITE_BACKEND_URL="${E2E_VITE_BACKEND_URL}"
+export GATEWAY_PORT="${E2E_GATEWAY_PORT}"
+export PW_DOCKER_FRONTEND_URL="${E2E_FRONTEND_URL}"
 
 cleanup() {
-  "${COMPOSE_SCRIPT}" --env-file "${DOCKER_ENV_FILE}" -p "${PROJECT_NAME}" -f "${REPO_DIR}/docker-compose.yml" down -v --remove-orphans >/dev/null 2>&1 || true
+  "${COMPOSE_SCRIPT}" --env-file "${DOCKER_ENV_FILE}" -p "${PROJECT_NAME}" -f "${REPO_DIR}/docker-compose.yml" -f "${REPO_DIR}/docker-compose.local.yml" down -v --remove-orphans >/dev/null 2>&1 || true
 }
 
 wait_for_frontend() {
@@ -60,7 +58,7 @@ wait_for_frontend() {
 trap cleanup EXIT INT TERM
 
 cleanup
-"${COMPOSE_SCRIPT}" --env-file "${DOCKER_ENV_FILE}" -p "${PROJECT_NAME}" -f "${REPO_DIR}/docker-compose.yml" up -d --build --remove-orphans
+"${COMPOSE_SCRIPT}" --env-file "${DOCKER_ENV_FILE}" -p "${PROJECT_NAME}" -f "${REPO_DIR}/docker-compose.yml" -f "${REPO_DIR}/docker-compose.local.yml" up -d --build --remove-orphans
 wait_for_frontend
 
 cd "${FRONTEND_DIR}"

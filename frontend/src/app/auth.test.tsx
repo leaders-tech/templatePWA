@@ -45,6 +45,6 @@ describe("AuthProvider", () => {
 
     await waitFor(() => expect(screen.getByText("Anonymous")).toBeInTheDocument());
     expect(postJson).toHaveBeenCalledTimes(1);
-    expect(postJson).toHaveBeenCalledWith("/api/auth/me");
+    expect(postJson).toHaveBeenCalledWith("/auth/me");
   });
 });
