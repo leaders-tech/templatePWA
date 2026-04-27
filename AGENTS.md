@@ -60,8 +60,16 @@
 - Keep the base `docker-compose.yml` platform-safe for `tlfpaas`:
   - no `ports:`
   - no local-only `build.args`
+  - no Compose `user:`
+  - no external networks or volumes
   - route-target services use `tlfpaas.route`
 - Keep local Docker-only browser behavior in `docker-compose.local.yml`, not in the base compose file.
+- Keep `frontend` on exposed port `8080`, `backend` on exposed port `8081`, backend APIs under `/api/...`, and WebSocket
+  under `/ws` unless the routing model is intentionally changed everywhere.
+- Keep runtime Docker images non-root by using `USER` in the final Dockerfile stage, not by adding Compose `user:`.
+- Treat `COOKIE_SECRET` in `.docker.env.example` as a local placeholder only; real production secrets belong in the
+  tlfpaas Secrets UI and require `Redeploy now`.
+- Before changing Docker artefacts, read `docs/tlfpaas-autodeploy.md`.
 - Keep LAN dev mode intentionally simple: prefer the explicit macOS Wi-Fi `en0` helper over generic network auto-detection.
 - Keep LAN ports separate from the default localhost ports unless the user asks otherwise.
 - Do not expand LAN mode into a multi-interface discovery system unless the user asks for broader network support.

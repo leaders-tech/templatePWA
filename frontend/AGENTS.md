@@ -8,6 +8,10 @@
 - Keep browser API calls POST-based in this template — that is a deliberate teaching choice.
 - Student-facing frontend config belongs in the root `.env` and `.docker.env` files, not in frontend-only env files.
 - Keep frontend JSON calls on `/api/...` and keep websocket on `/ws` so same-origin production routing stays simple.
+- Keep the production Docker build same-origin for tlfpaas: `VITE_BACKEND_URL` is the only current frontend build-time
+  env var and should remain `/api` for production.
+- If you add another public frontend build-time env var, use a `VITE_*` key and document it in `.docker.env.example`.
+- Keep `frontend/Dockerfile` serving nginx on `8080` and keep the final runtime stage non-root with `USER nginx`.
 - Hidden frontend agent commands:
   - `make afront`, `make aopen`, `make astop`
   - `make abrowser SCRIPT=path/to/scenario.mjs`

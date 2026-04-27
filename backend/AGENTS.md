@@ -9,6 +9,11 @@
 - Keep production same-origin for this template. Do not add cross-origin production CORS unless the architecture changes.
 - Keep browser-facing JSON endpoints as POST routes in this template unless the user explicitly changes that rule.
 - Keep browser-facing JSON endpoints under `/api/...` and keep websocket at `/ws` unless the user explicitly changes the routing model.
+- In Docker/tlfpaas, keep the backend listening on `0.0.0.0:8081`.
+- Persistent writable backend data belongs under `/data`, currently `/data/app.sqlite3`, backed by the `sqlite_data`
+  named volume.
+- Keep `backend/Dockerfile` final runtime stage non-root with `USER app`; do not add Compose `user:` to solve runtime
+  permissions.
 - Hidden backend agent commands:
   - `make aback`, `make aback-once`, `make astop`
   - `make alogin USER=user PASS=user`
