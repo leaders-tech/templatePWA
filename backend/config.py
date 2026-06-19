@@ -26,6 +26,7 @@ class Settings:
     db_path: Path
     cookie_secret: str
     frontend_origin: str
+    debug_logs: bool = True
     access_cookie_name: str = "template_access"
     refresh_cookie_name: str = "template_refresh"
     access_ttl_seconds: int = 2 * 60 * 60
@@ -64,6 +65,7 @@ def load_settings() -> Settings:
     frontend_public_host = os.getenv("FRONTEND_PUBLIC_HOST", "localhost").strip()
     frontend_port = os.getenv("FRONTEND_PORT", "5101").strip()
     frontend_origin = os.getenv("FRONTEND_ORIGIN", f"http://{frontend_public_host}:{frontend_port}").rstrip("/")
+    debug_logs = parse_bool_env(os.getenv("APP_DEBUG_LOGS"), default=mode != "prod")
     settings = Settings(
         mode=mode,
         host=host,
@@ -71,9 +73,21 @@ def load_settings() -> Settings:
         db_path=db_path,
         cookie_secret=cookie_secret,
         frontend_origin=frontend_origin,
+        debug_logs=debug_logs,
     )
     validate_settings(settings)
     return settings
+
+
+def parse_bool_env(value: str | None, *, default: bool) -> bool:
+    if value is None or value.strip() == "":
+        return default
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError(f"Expected a boolean env value, got {value!r}. Use 1 or 0.")
 
 
 def validate_settings(settings: Settings) -> None:

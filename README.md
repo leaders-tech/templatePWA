@@ -148,6 +148,15 @@ The frontend will be available at `http://localhost:5101`.
 
 Open `http://localhost:5101` in your browser to see the app.
 
+### Backend logs
+
+The backend prints useful startup, request, and websocket logs to the terminal.
+If you want quieter backend logs, set this in `.env`:
+
+```env
+APP_DEBUG_LOGS=0
+```
+
 ### Share the app on the same Wi-Fi
 
 If you want to test the app from another phone, tablet, or laptop on the same Wi-Fi, use the LAN commands instead of the normal localhost commands.

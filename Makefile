@@ -3,12 +3,12 @@
 # Copy an existing target pattern here when you add another simple root command.
 .DEFAULT_GOAL := help
 
-ifneq (,$(wildcard .env))
-include .env
-endif
-
 ifneq (,$(wildcard .agent.env))
 include .agent.env
+endif
+
+ifneq (,$(wildcard .env))
+include .env
 endif
 
 DOCKER_COMPOSE := ./scripts/docker-compose.sh --env-file .docker.env -f docker-compose.yml -f docker-compose.local.yml
@@ -102,7 +102,7 @@ aback:
 	./scripts/kill_port.sh "$(AGENT_BACKEND_PORT)"
 	uv run python ./scripts/agent_db_snapshot.py
 	echo $$$$ > "$(AGENT_BACKEND_PID)"; \
-	exec env APP_MODE=$(APP_MODE) APP_HOST=$(AGENT_BACKEND_HOST) APP_PORT=$(AGENT_BACKEND_PORT) DB_PATH=$(AGENT_DB_PATH) COOKIE_SECRET=$(AGENT_COOKIE_SECRET) FRONTEND_ORIGIN=$(AGENT_FRONTEND_URL) uv run python -m backend.dev
+	exec env APP_MODE=$(APP_MODE) APP_DEBUG_LOGS=$(APP_DEBUG_LOGS) APP_HOST=$(AGENT_BACKEND_HOST) APP_PORT=$(AGENT_BACKEND_PORT) DB_PATH=$(AGENT_DB_PATH) COOKIE_SECRET=$(AGENT_COOKIE_SECRET) FRONTEND_ORIGIN=$(AGENT_FRONTEND_URL) uv run python -m backend.dev
 
 aback-once:
 	$(CHECK_LOCAL_ENV)
@@ -111,7 +111,7 @@ aback-once:
 	./scripts/kill_port.sh "$(AGENT_BACKEND_PORT)"
 	uv run python ./scripts/agent_db_snapshot.py
 	echo $$$$ > "$(AGENT_BACKEND_PID)"; \
-	exec env APP_MODE=$(APP_MODE) APP_HOST=$(AGENT_BACKEND_HOST) APP_PORT=$(AGENT_BACKEND_PORT) DB_PATH=$(AGENT_DB_PATH) COOKIE_SECRET=$(AGENT_COOKIE_SECRET) FRONTEND_ORIGIN=$(AGENT_FRONTEND_URL) uv run python -m backend.main
+	exec env APP_MODE=$(APP_MODE) APP_DEBUG_LOGS=$(APP_DEBUG_LOGS) APP_HOST=$(AGENT_BACKEND_HOST) APP_PORT=$(AGENT_BACKEND_PORT) DB_PATH=$(AGENT_DB_PATH) COOKIE_SECRET=$(AGENT_COOKIE_SECRET) FRONTEND_ORIGIN=$(AGENT_FRONTEND_URL) uv run python -m backend.main
 
 afront:
 	$(CHECK_AGENT_ENV)

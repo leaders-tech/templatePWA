@@ -18,8 +18,7 @@ export default defineConfig(({ mode }) => {
     ...baseLogger,
     error(message: string, options?: Parameters<typeof baseLogger.error>[1]) {
       const isKnownWsDisconnect =
-        (message.includes("ws proxy error:") || message.includes("ws proxy socket error:")) &&
-        (message.includes("EPIPE") || message.includes("ECONNRESET"));
+        (message.includes("ws proxy error:") || message.includes("ws proxy socket error:")) && (message.includes("EPIPE") || message.includes("ECONNRESET"));
 
       if (isKnownWsDisconnect) {
         return;

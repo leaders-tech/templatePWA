@@ -6,10 +6,17 @@ Copy the helper style here when you add another small shared middleware helper.
 
 from __future__ import annotations
 
+import logging
+from time import perf_counter
+
 from aiohttp import web
 
 from backend.config import Settings
 from backend.http.json_api import AppError, fail
+
+ERROR_LOGGER = logging.getLogger("backend.error")
+REQUEST_LOGGER = logging.getLogger("backend.request")
+EXPECTED_ANONYMOUS_401_PATHS = {"/api/auth/me", "/api/auth/refresh"}
 
 
 def add_cors_headers(request: web.Request, response: web.StreamResponse) -> web.StreamResponse:
@@ -34,6 +41,28 @@ async def error_middleware(request: web.Request, handler):
         if error.status >= 400:
             return add_cors_headers(request, fail(error.status, "http_error", error.reason or "Request failed."))
         raise
+    except Exception:
+        ERROR_LOGGER.exception("Unhandled backend error while handling %s %s", request.method, request.path)
+        return add_cors_headers(request, fail(500, "server_error", "Server error."))
+
+
+@web.middleware
+async def request_logging_middleware(request: web.Request, handler):
+    started_at = perf_counter()
+    response = await handler(request)
+    settings: Settings = request.app["settings"]
+    duration_ms = round((perf_counter() - started_at) * 1000)
+    user = request.get("current_user")
+    user_part = f" user={user['id']}" if isinstance(user, dict) and "id" in user else ""
+    message = f"{request.method} {request.path} {response.status} {duration_ms}ms{user_part}"
+
+    if response.status == 401 and request.path in EXPECTED_ANONYMOUS_401_PATHS and user is None:
+        return response
+    if response.status >= 500:
+        REQUEST_LOGGER.error(message)
+    elif settings.debug_logs:
+        REQUEST_LOGGER.info(message)
+    return response
 
 
 @web.middleware
