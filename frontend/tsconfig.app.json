@@ -17,9 +17,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "tsBuildInfoFile": "./.vite/tsconfig.app.tsbuildinfo",
     "jsx": "react-jsx",
     "types": ["vite/client", "vite-plugin-pwa/client", "vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src"],
-  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+  "include": ["src"]
 }

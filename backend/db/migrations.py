@@ -14,6 +14,7 @@ from backend.db.sqlite_time import sqlite_datetime_codecs
 
 
 def run_migrations(db_path: Path, migrations_path: Path) -> None:
+    db_path.parent.mkdir(parents=True, exist_ok=True)
     migrations = read_migrations(str(migrations_path))
     with sqlite_datetime_codecs():
         backend = get_backend(f"sqlite:///{db_path}")

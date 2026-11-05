@@ -1,5 +1,21 @@
 # Template PWA Agent Notes
 
+## Template lifecycle
+
+- This repository is a starter template, not the user's finished application. Nothing from the template must be preserved for its own sake.
+- Replace or remove any starter code, demo feature, page, styling, branding, schema, dependency, tool, or documentation when the user's application needs something else.
+- The rules below describe the current starting point. They do not require keeping template features or architecture after the user asks to change them.
+- Once the user starts requesting application features, update every affected `AGENTS.md` in the same change. Keep a concrete inventory of what is still template material and what is now the user's application, using file paths or feature names.
+- Review that inventory after each feature request. Move adapted or replaced parts into the application inventory and remove stale template instructions. Do not describe the user's completed features as demos.
+- When no template material remains, remove all template-specific instructions, inventories, and template wording from every `AGENTS.md`. Keep useful application instructions and describe only the user's application.
+
+## Current ownership
+
+- Remaining template: the entire repository, including demo login/admin accounts, notes, pages, branding, PWA assets, migrations, tests, development helpers, and deployment examples.
+- User application: none yet. Dependency maintenance and template instruction updates do not turn the starter into a user application.
+
+## Working defaults
+
 - The main user of this template is a school student who does not understand the technology deeply yet.
 - Keep the template small and easy to read.
 - Prefer the simplest working design over clever abstractions.
@@ -47,6 +63,7 @@
 - Student-facing configuration belongs only in the root `.env` and `.docker.env` files.
 - Do not add new user-tuned ports, URLs, secrets, modes, or project names to `Makefile`, compose files, Playwright configs, or Dockerfiles.
 - Hidden agent-only configuration belongs in the root `.agent.env` file.
+- Treat `.claude/launch.json` as a local generated preview file. If needed, generate it from `.agent.env` and use the hidden runtime commands; do not commit a second set of ports or URLs.
 - When normal human local ports are busy, prefer the hidden agent runtime instead of changing the student-facing commands.
 - Hidden agent runtime commands:
   - `make aback`, `make aback-once`, `make afront`, `make aopen`, `make astop`, `make aclean`

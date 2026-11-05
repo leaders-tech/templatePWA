@@ -5,6 +5,7 @@ Copy the route pattern here when you add another top-level page.
 */
 
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "./auth";
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
@@ -13,6 +14,16 @@ import { AdminPage } from "../pages/AdminPage";
 
 function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
+  const [error, setError] = useState("");
+
+  const onLogout = async () => {
+    setError("");
+    try {
+      await logout();
+    } catch (logoutError) {
+      setError(logoutError instanceof Error ? logoutError.message : "Could not log out. Please try again.");
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -36,7 +47,7 @@ function Layout({ children }: { children: React.ReactNode }) {
                     Admin
                   </NavLink>
                 )}
-                <button className="rounded-full bg-slate-900 px-4 py-2 text-white" onClick={() => void logout()}>
+                <button className="rounded-full bg-slate-900 px-4 py-2 text-white" onClick={() => void onLogout()}>
                   Logout
                 </button>
               </>
@@ -48,7 +59,14 @@ function Layout({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 py-8">
+        {error ? (
+          <p role="alert" className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-rose-700">
+            {error}
+          </p>
+        ) : null}
+        {children}
+      </main>
     </div>
   );
 }
@@ -104,5 +122,3 @@ export function App() {
     </Layout>
   );
 }
-
-export { RequireAdmin, RequireAuth };

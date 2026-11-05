@@ -11,6 +11,7 @@ import logging
 
 from aiohttp import WSMsgType, web
 
+from backend.app_keys import WS_HUB
 from backend.auth.access import require_user
 from backend.http.middleware import require_allowed_origin
 
@@ -23,7 +24,7 @@ async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
     ws = web.WebSocketResponse(heartbeat=30.0)
     await ws.prepare(request)
 
-    hub = request.app["ws_hub"]
+    hub = request.app[WS_HUB]
     hub.add(user["id"], ws)
     LOGGER.info("WebSocket connected user=%s connections=%s", user["id"], hub.count_for_user(user["id"]))
     await ws.send_json({"type": "ws.ready", "user_id": user["id"], "connections": hub.count_for_user(user["id"])})

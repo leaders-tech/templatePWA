@@ -1,11 +1,23 @@
 # Backend Agent Notes
 
+## Template lifecycle and current ownership
+
+- This backend is starter template material. None of its code, demo behavior, tables, routes, dependencies, or architecture must be preserved for its own sake.
+- Replace or remove starter parts as the user's requested application takes shape. The defaults below apply until the user needs a different design.
+- With every application feature request, update this file and the root `AGENTS.md` to identify remaining template parts and actual user application parts. Update `backend/db/AGENTS.md` too when database ownership changes.
+- Remaining template: all of `backend/`, including auth, demo users, notes, admin endpoints, WebSocket examples, migrations, and tests.
+- User application: none yet.
+- When the transition is complete, remove template inventories and all template-specific wording and instructions here; retain only instructions for the user's backend.
+
+## Working defaults
+
 - This backend is for students, so code should be obvious on first reading.
 - Use `aiohttp`, plain functions, and small modules.
 - Keep all SQLite access inside `backend/db`.
 - Store timestamps as UTC ISO strings and convert explicitly in Python.
 - Use `STRICT` tables, `foreign_keys = ON`, and `journal_mode = WAL`.
 - Return only the shared JSON envelope shape.
+- Store shared app or request objects with the typed keys from `backend/app_keys.py` (`request.app[DB]`), not with plain string keys.
 - Keep production same-origin for this template. Do not add cross-origin production CORS unless the architecture changes.
 - Keep browser-facing JSON endpoints as POST routes in this template unless the user explicitly changes that rule.
 - Keep browser-facing JSON endpoints under `/api/...` and keep websocket at `/ws` unless the user explicitly changes the routing model.

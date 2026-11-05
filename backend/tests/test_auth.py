@@ -10,8 +10,9 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from backend.auth.tokens import build_access_token
+from backend.app_keys import DB, SETTINGS
 from backend.auth.passwords import hash_password, verify_password
+from backend.auth.tokens import build_access_token
 from backend.config import DEFAULT_COOKIE_SECRET, Settings
 from backend.db.refresh_sessions import count_sessions
 from backend.db.seed import seed_dev_data
@@ -70,9 +71,9 @@ async def test_expired_access_cookie_returns_401(client, create_user) -> None:
         mode="test",
         host="127.0.0.1",
         port=8081,
-        db_path=client.app["settings"].db_path,
-        cookie_secret=client.app["settings"].cookie_secret,
-        frontend_origin=client.app["settings"].frontend_origin,
+        db_path=client.app[SETTINGS].db_path,
+        cookie_secret=client.app[SETTINGS].cookie_secret,
+        frontend_origin=client.app[SETTINGS].frontend_origin,
         access_ttl_seconds=-1,
     )
     expired_token = build_access_token(
@@ -115,6 +116,16 @@ async def test_non_json_write_request_returns_400(client, create_user, auth_head
         headers={"Origin": "http://127.0.0.1:5101", "Content-Type": "application/x-www-form-urlencoded"},
     )
     assert response.status == 400
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("body", [b'{"username":', b"\xff", b"[]", b"null"])
+async def test_invalid_json_returns_400_with_json_envelope(client, auth_headers, body) -> None:
+    response = await client.post("/api/auth/login", data=body, headers={**auth_headers, "Content-Type": "application/json"})
+    assert response.status == 400
+    payload = await response.json()
+    assert payload["ok"] is False
+    assert payload["error"]["code"] == "bad_request"
 
 
 @pytest.mark.asyncio
@@ -205,8 +216,8 @@ async def test_dev_seed_only_creates_missing_users(tmp_path, monkeypatch) -> Non
     try:
         await on_startup(app)
         assert calls == ["user", "admin"]
-        await seed_dev_data(app["db"], settings)
-        users = await list_users(app["db"])
+        await seed_dev_data(app[DB], settings)
+        users = await list_users(app[DB])
         assert [user["username"] for user in users] == ["user", "admin"]
         assert calls == ["user", "admin"]
     finally:
@@ -225,3 +236,16 @@ def test_create_app_refuses_default_secret_in_prod(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="default COOKIE_SECRET"):
         create_app(settings)
+
+
+@pytest.mark.asyncio
+async def test_login_removes_expired_refresh_sessions(client, create_user, auth_headers, db) -> None:
+    await create_user("user", "user")
+    await login(client, "user", "user", auth_headers)
+    expired_at = (datetime.now(tz=UTC) - timedelta(minutes=1)).isoformat(timespec="seconds")
+    await db.execute("UPDATE refresh_sessions SET expires_at = ?", (expired_at,))
+    await db.commit()
+    client.session.cookie_jar.clear()
+
+    await login(client, "user", "user", auth_headers)
+    assert await count_sessions(db) == 1

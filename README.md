@@ -8,6 +8,8 @@ This is a teaching template for school projects. It has a frontend (the part use
 - **Backend** — Python web server using aiohttp, stores data in a SQLite file.
 - **Tests** — automated checks that verify the app works correctly.
 
+This starter is meant to be replaced as you build your own app. You can remove any demo page, feature, branding, or tool you do not need. Keep each `AGENTS.md` up to date with what is still a template and what now belongs to your app. Remove the template-only instructions when that transition is complete.
+
 ---
 
 ## Words you will see in this guide
@@ -71,7 +73,7 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
 # Load nvm without restarting the terminal:
 . "$HOME/.nvm/nvm.sh"
 # Install Node.js:
-nvm install 24
+nvm install 26
 ```
 
 ---
@@ -99,7 +101,7 @@ The easiest way (one command does it all):
 make setup
 ```
 
-That is it. `make setup` installs Python libraries, installs JavaScript libraries, installs browser drivers for tests, and creates the local config files `.env` and `.docker.env`.
+That is it. `make setup` installs the locked Python and JavaScript libraries, installs Chromium for tests, and creates the local config files `.env` and `.docker.env`. It also creates `.agent.env` for coding agents.
 
 <details>
 <summary>What does make setup do exactly? (click to expand)</summary>
@@ -109,10 +111,12 @@ If you are curious, it runs these steps one by one:
 ```bash
 uv sync --all-groups       # installs Python libraries
 cd frontend
-npm install                # installs JavaScript libraries
-npx playwright install     # installs browsers for end-to-end tests
+npm ci                     # installs the locked JavaScript libraries
+npx playwright install chromium # installs the browser for end-to-end tests
+cd ..
 cp .env.example .env
 cp .docker.env.example .docker.env
+cp .agent.env.example .agent.env
 ```
 
 You do not need to run these yourself — `make setup` does it for you.
@@ -269,7 +273,7 @@ cd frontend
 npm run test:e2e
 ```
 
-Playwright opens a real browser, clicks through the app, and checks that everything works.
+Playwright opens Chromium, clicks through the app, and checks login, cookie refresh, redirects, notes, live updates between tabs, and error messages.
 
 ### Run all tests at once
 
@@ -278,6 +282,8 @@ From the project root:
 ```bash
 make test
 ```
+
+This runs Ruff, backend tests, Oxlint, the production frontend build (including TypeScript checks), frontend unit tests, and browser tests.
 
 ---
 
@@ -323,11 +329,21 @@ make format
 
 ## Updating dependencies
 
-Safe update (stays within the same major versions — recommended):
+Normal update (stays within the version ranges in `pyproject.toml` and `frontend/package.json`):
 
 ```bash
 make deps-update-safe
 ```
+
+To also move frontend libraries to their latest stable major versions:
+
+```bash
+make deps-update-latest
+```
+
+Both commands keep the explicit Python version bounds. To change a Python major version, use `uv add 'package-name>=new-version,<next-major'` (or `uv add --dev` for a development tool) and review the release notes.
+
+The frontend uses TypeScript 7 and Oxlint. Oxlint has built-in TypeScript and React Hooks rules, so it does not need a separate ESLint parser. Prettier formats code. Run `cd frontend && npm run lint` for a quick lint check.
 
 After updating, always run tests to make sure nothing broke:
 
@@ -411,6 +427,8 @@ Set these values in Dokploy instead of editing `docker-compose.yml`:
 
 Important notes:
 
+- Production requires `APP_MODE=prod`, an HTTPS `FRONTEND_ORIGIN`, and a random `COOKIE_SECRET` with at least 32 characters. Example secrets are rejected in production. For tlfpaas, set the secret in the Secrets UI and choose `Redeploy now`.
+- Use a fresh production database. Changing `APP_MODE` does not remove demo accounts already stored in a development database.
 - The frontend API base path is still a build-time value. If `VITE_BACKEND_URL` changes, rebuild the frontend image.
 - Internal container ports stay fixed at `8080` and `8081`.
 - For this template, keep `VITE_BACKEND_URL=/api` in both local Docker testing and production.
@@ -451,3 +469,38 @@ If nginx or Traefik is on the same Docker network, it can route to:
 - Single-service web app: one service with `tlfpaas.route=web`
 - Backend-only public app: one service with `tlfpaas.route=backend`, serving only `/api` and `/ws`
 - Worker or bot: no `tlfpaas.route` label
+
+---
+
+## Maintenance review — November 5, 2026
+
+The current React + Vite + aiohttp + SQLite design is still a reasonable starting point for a small school app. Same-origin routing, plain SQL, cookie login, and a single backend process keep the project easy to follow. Larger apps may need a different design; the template does not need to be preserved.
+
+The update uses these stable versions:
+
+| Tool or library | Version |
+|---|---|
+| React / React DOM | 19.3.1 |
+| React Router | 7.18.5 |
+| Vite / React plugin | 8.3.6 / 6.2.1 |
+| TypeScript / Oxlint | 7.0.2 / 1.91.0 |
+| Tailwind CSS | 4.3.4 |
+| Vitest / Playwright | 5.1.0 / 1.64.1 |
+| aiohttp / aiosqlite | 3.14.5 / 0.22.1 |
+| pytest / Ruff | 9.2.0 / 0.17.3 |
+
+All direct libraries were checked against npm or PyPI, and both lock files were refreshed. Unchanged packages such as `argon2-cffi`, `itsdangerous`, and `yoyo-migrations` already use their latest stable releases.
+
+Node 25 was replaced with [Node 26 LTS](https://nodejs.org/en/about/previous-releases). Python 3.14 still receives bug fixes and is supported until October 2030; Python 3.15 is newer but is not required by this template. See the [Python support table](https://devguide.python.org/versions/). Docker also uses uv 0.13.7, nginx 1.30.6 (stable), and Caddy 2.11.8, the latest [published official Docker version](https://raw.githubusercontent.com/docker-library/official-images/master/library/caddy) at review time. Use `docker compose build --pull` when refreshing base-image patches.
+
+The review also fixed invalid JSON returning 500, missing/other users' note updates returning 500, startup with a new database directory, weak example secrets in production, unhandled browser errors, WebSocket cleanup during React StrictMode, and the service worker returning app HTML for API navigation. Generated JavaScript config copies were removed so the TypeScript configs are the source of truth. The old local Claude preview file with stale ports was removed from the template; generate a local preview file from `.agent.env` when needed. Local secrets and agent files are excluded from the Docker build context.
+
+The `glob` override in `frontend/package.json` selects 14.0.3 for Workbox's build-time file scan. The older dependency has a [cancellation issue](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4). Remove this override once Workbox itself requires a fixed version and the build still passes.
+
+One known dependency issue remains: [`deepmerge` has a low-severity advisory and no patched release](https://github.com/advisories/GHSA-gcqx-w48m-w2h4). It is used by the PWA build tool through Workbox/Rollup. npm may count several parent packages for this one issue. Do not feed untrusted configuration into build tools; check for an upstream fix during future updates.
+
+Validation passed: `make test` (67 backend tests, 25 frontend unit tests, 6 browser tests, Ruff, Oxlint, and the production build) and `make test-e2e-docker` (8 browser tests). A live browser check covered login, note creation/edit/delete, WebSocket connection, and logout with no unexpected console or network errors. npm reported no outdated direct packages; the production npm audit and Python production audit found no known vulnerabilities.
+
+A second pass replaced string app/request keys with typed aiohttp keys in `backend/app_keys.py` (no more `NotAppKeyWarning`), made the browser refresh the short-lived login cookie automatically and repeat the request once, removed expired refresh sessions on login, compared refresh-token hashes in constant time, kept one broken WebSocket from failing a note save, type-checked frontend unit tests during the build, removed unused helpers, and stopped tracking the ignored `.idea/` folder.
+
+Before turning this into a public app, decide how real users will be created, add login rate limits, and choose the required session revocation rules. The current signed access cookie lasts up to two hours, and logout does not revoke a copied access cookie or other open WebSocket connections. The in-memory WebSocket hub assumes one backend process. Offline mode caches the app shell; it does not save notes without a server connection. These are application decisions to revisit as real features replace the demo.

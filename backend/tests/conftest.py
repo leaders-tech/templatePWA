@@ -6,13 +6,14 @@ Copy fixture patterns here when you add another shared backend test helper.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 import pytest
 from aiohttp.test_utils import TestClient
 from yarl import URL
 
+from backend.app_keys import DB
 from backend.auth.passwords import hash_password
 from backend.config import Settings
 from backend.db.users import create_user_if_missing
@@ -43,7 +44,7 @@ async def client(aiohttp_client, app) -> TestClient:
 
 @pytest.fixture
 async def db(app):
-    return app["db"]
+    return app[DB]
 
 
 @pytest.fixture

@@ -137,7 +137,7 @@ If the template grows a Redis-backed feature, keep Redis private:
 ```yaml
 services:
   redis:
-    image: redis:7.4-alpine
+    image: redis:8.10.3-alpine
     volumes:
       - redis_data:/data
 
@@ -161,7 +161,7 @@ private:
 ```yaml
 services:
   nats:
-    image: nats:2.10-alpine
+    image: nats:2.15.2-alpine
     command: ["-js"]
     volumes:
       - nats_data:/data

@@ -16,6 +16,7 @@ vi.mock("../pages/AdminPage", () => ({
 }));
 
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { App } from "./App";
 import { AuthContext } from "./auth";
@@ -29,7 +30,7 @@ const userValue: User = {
   updated_at: "2026-03-06T10:00:00+00:00",
 };
 
-function renderApp(path: string, user: User | null) {
+function renderApp(path: string, user: User | null, logout = vi.fn()) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <AuthContext.Provider
@@ -37,8 +38,7 @@ function renderApp(path: string, user: User | null) {
           user,
           loading: false,
           login: vi.fn(),
-          logout: vi.fn(),
-          reloadUser: vi.fn(),
+          logout,
         }}
       >
         <App />
@@ -55,6 +55,14 @@ describe("App routes", () => {
 
   it("redirects normal users away from admin page", () => {
     renderApp("/admin", userValue);
+    expect(screen.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
+  });
+
+  it("shows a logout failure while keeping the current page", async () => {
+    const logout = vi.fn().mockRejectedValueOnce(new Error("Could not reach the server."));
+    renderApp("/dashboard", userValue, logout);
+    await userEvent.click(screen.getByRole("button", { name: "Logout" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not reach the server.");
     expect(screen.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
   });
 });

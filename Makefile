@@ -26,8 +26,7 @@ AGENT_FRONTEND_PID := $(AGENT_RUNTIME_DIR_ABS)/frontend.pid
 ALOGIN_USER := $(if $(filter command line,$(origin USER)),$(USER),user)
 ALOGIN_PASS := $(if $(filter command line,$(origin PASS)),$(PASS),user)
 APOST_BODY := $(if $(filter command line,$(origin BODY)),$(BODY),{})
-PY_RUNTIME_DEPS := $(shell python3 -c 'import re, tomllib, pathlib; data = tomllib.loads(pathlib.Path("pyproject.toml").read_text()); print(" ".join(re.match(r"[A-Za-z0-9._-]+", dep).group(0) for dep in data["project"]["dependencies"]))')
-PY_DEV_DEPS := $(shell python3 -c 'import re, tomllib, pathlib; data = tomllib.loads(pathlib.Path("pyproject.toml").read_text()); print(" ".join(re.match(r"[A-Za-z0-9._-]+", dep).group(0) for dep in data["dependency-groups"]["dev"]))')
+NPM_LATEST_DEPS = $(shell node -e 'const p = require("./frontend/package.json"); console.log(Object.keys({...p.dependencies, ...p.devDependencies}).map(name => name + "@latest").join(" "))')
 CHECK_LOCAL_ENV = @test -f .env || (echo "Local config file .env was not found. Run make setup first."; exit 1)
 CHECK_DOCKER_ENV = @test -f .docker.env || (echo "Docker config file .docker.env was not found. Run make setup first."; exit 1)
 CHECK_AGENT_ENV = @test -f .agent.env || (echo "Agent config file .agent.env was not found. Run make setup first."; exit 1)
@@ -50,15 +49,15 @@ help:
 	@printf "  make open-docker Open the Docker frontend in a browser\n"
 	@printf "  make stop-docker Stop the local Docker test containers\n"
 	@printf "  make clean-docker Stop the local Docker test containers and delete their images and data\n"
-	@printf "  make deps-update-safe Update backend and frontend deps in the safe supported way\n"
-	@printf "  make deps-update-latest Update backend deps to the newest available versions\n"
+	@printf "  make deps-update-safe Update dependencies within their declared version ranges\n"
+	@printf "  make deps-update-latest Also update frontend major versions; keep explicit Python version bounds\n"
 	@printf "  make format  Format backend and frontend code\n"
 	@printf "  make test    Run backend, frontend unit, and e2e tests\n"
 	@printf "  make test-e2e-docker Run e2e tests against Docker containers\n"
 
 setup:
 	uv sync --all-groups
-	cd frontend && npm install && npx playwright install
+	cd frontend && npm ci && npx playwright install chromium
 	test -f .env || cp .env.example .env
 	test -f .agent.env || cp .agent.env.example .agent.env
 	test -f .docker.env || cp .docker.env.example .docker.env
@@ -187,14 +186,14 @@ clean-docker:
 	$(DOCKER_COMPOSE) down -v --remove-orphans --rmi local
 
 deps-update-safe:
-	uv add --bounds major $(PY_RUNTIME_DEPS)
-	uv add --dev --bounds major $(PY_DEV_DEPS)
+	uv lock --upgrade
+	uv sync --all-groups
 	cd frontend && npm update
 
 deps-update-latest:
-	uv add --bounds lower $(PY_RUNTIME_DEPS)
-	uv add --dev --bounds lower $(PY_DEV_DEPS)
-	cd frontend && npm update
+	uv lock --upgrade
+	uv sync --all-groups
+	cd frontend && npm install $(NPM_LATEST_DEPS)
 
 format:
 	uv run ruff format .
@@ -202,7 +201,10 @@ format:
 
 test:
 	$(CHECK_LOCAL_ENV)
+	uv run ruff check .
 	uv run pytest
+	cd frontend && npm run lint
+	cd frontend && npm run build
 	cd frontend && npm run test
 	cd frontend && npm run test:e2e
 

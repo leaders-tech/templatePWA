@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from aiohttp import web
 
+from backend.app_keys import DB, WS_HUB
 from backend.auth.access import require_admin, require_user
 from backend.db.notes import delete_note, list_notes, save_note
 from backend.db.users import list_users
@@ -21,7 +22,7 @@ async def health(request: web.Request) -> web.Response:
 
 async def notes_list(request: web.Request) -> web.Response:
     user = require_user(request)
-    notes = await list_notes(request.app["db"], user["id"])
+    notes = await list_notes(request.app[DB], user["id"])
     return ok({"notes": notes})
 
 
@@ -30,13 +31,15 @@ async def notes_save(request: web.Request) -> web.Response:
     user = require_user(request)
     payload = await read_json(request)
     note_id = payload.get("id")
-    text = str(payload.get("text", "")).strip()
-    if not text:
+    text = payload.get("text")
+    if not isinstance(text, str) or not text.strip():
         raise AppError(400, "bad_request", "Note text is required.")
-    if note_id is not None and not isinstance(note_id, int):
+    if note_id is not None and type(note_id) is not int:
         raise AppError(400, "bad_request", "Note id must be an integer.")
-    note = await save_note(request.app["db"], user["id"], text, note_id)
-    await request.app["ws_hub"].send_to_user(user["id"], {"type": "notes.changed", "note": note})
+    note = await save_note(request.app[DB], user["id"], text.strip(), note_id)
+    if note is None:
+        raise AppError(404, "not_found", "Note does not exist.")
+    await request.app[WS_HUB].send_to_user(user["id"], {"type": "notes.changed", "note": note})
     return ok({"note": note})
 
 
@@ -45,18 +48,18 @@ async def notes_delete(request: web.Request) -> web.Response:
     user = require_user(request)
     payload = await read_json(request)
     note_id = payload.get("id")
-    if not isinstance(note_id, int):
+    if type(note_id) is not int:
         raise AppError(400, "bad_request", "Note id must be an integer.")
-    deleted = await delete_note(request.app["db"], user["id"], note_id)
+    deleted = await delete_note(request.app[DB], user["id"], note_id)
     if not deleted:
         raise AppError(404, "not_found", "Note does not exist.")
-    await request.app["ws_hub"].send_to_user(user["id"], {"type": "notes.changed", "note_id": note_id})
+    await request.app[WS_HUB].send_to_user(user["id"], {"type": "notes.changed", "note_id": note_id})
     return ok({"deleted": True, "id": note_id})
 
 
 async def admin_users_list(request: web.Request) -> web.Response:
     require_admin(request)
-    users = await list_users(request.app["db"])
+    users = await list_users(request.app[DB])
     return ok({"users": users})
 
 

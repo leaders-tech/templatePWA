@@ -6,16 +6,18 @@ Copy the route and helper pattern here when you add another small auth endpoint 
 
 from __future__ import annotations
 
+import hmac
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from aiohttp import web
 
+from backend.app_keys import DB, SETTINGS
 from backend.auth.access import require_user
 from backend.auth.passwords import verify_password
 from backend.auth.tokens import build_access_token, create_refresh_token_pair, hash_refresh_token
 from backend.config import Settings
-from backend.db.refresh_sessions import create_session, delete_session, get_session, rotate_session
+from backend.db.refresh_sessions import create_session, delete_expired_sessions, delete_session, get_session, rotate_session
 from backend.db.users import get_user_by_id, get_user_by_username, row_to_user
 from backend.http.json_api import AppError, ok, read_json
 from backend.http.middleware import require_allowed_origin
@@ -65,8 +67,8 @@ async def login(request: web.Request) -> web.Response:
     if not username or not password:
         raise AppError(400, "bad_request", "Username and password are required.")
 
-    db = request.app["db"]
-    settings: Settings = request.app["settings"]
+    db = request.app[DB]
+    settings = request.app[SETTINGS]
     user_row = await get_user_by_username(db, username)
     if user_row is None or not verify_password(user_row["password_hash"], password):
         raise AppError(401, "invalid_credentials", "Wrong username or password.")
@@ -74,6 +76,8 @@ async def login(request: web.Request) -> web.Response:
     old_cookie = _parse_refresh_cookie(request.cookies.get(settings.refresh_cookie_name))
     if old_cookie is not None:
         await delete_session(db, old_cookie[0])
+    # Old sessions that nobody refreshed would stay forever, so remove them on each login.
+    await delete_expired_sessions(db)
 
     session_id, raw_token = create_refresh_token_pair()
     expires_at = (datetime.now(tz=UTC) + timedelta(seconds=settings.refresh_ttl_seconds)).isoformat(timespec="seconds")
@@ -87,17 +91,17 @@ async def login(request: web.Request) -> web.Response:
 
 async def refresh(request: web.Request) -> web.Response:
     require_allowed_origin(request)
-    settings: Settings = request.app["settings"]
+    settings = request.app[SETTINGS]
     parsed_cookie = _parse_refresh_cookie(request.cookies.get(settings.refresh_cookie_name))
     if parsed_cookie is None:
         raise AppError(401, "not_authenticated", "Refresh session is missing.")
 
     session_id, raw_token = parsed_cookie
-    db = request.app["db"]
+    db = request.app[DB]
     session = await get_session(db, session_id)
     if session is None:
         raise AppError(401, "not_authenticated", "Refresh session is invalid.")
-    if session["token_hash"] != hash_refresh_token(settings, raw_token):
+    if not hmac.compare_digest(session["token_hash"], hash_refresh_token(settings, raw_token)):
         await delete_session(db, session_id)
         raise AppError(401, "not_authenticated", "Refresh session is invalid.")
 
@@ -122,10 +126,10 @@ async def refresh(request: web.Request) -> web.Response:
 
 async def logout(request: web.Request) -> web.Response:
     require_allowed_origin(request)
-    settings: Settings = request.app["settings"]
+    settings = request.app[SETTINGS]
     parsed_cookie = _parse_refresh_cookie(request.cookies.get(settings.refresh_cookie_name))
     if parsed_cookie is not None:
-        await delete_session(request.app["db"], parsed_cookie[0])
+        await delete_session(request.app[DB], parsed_cookie[0])
     response = ok({"logged_out": True})
     clear_auth_cookies(response, settings)
     return response
@@ -133,7 +137,7 @@ async def logout(request: web.Request) -> web.Response:
 
 async def me(request: web.Request) -> web.Response:
     user = require_user(request)
-    db = request.app["db"]
+    db = request.app[DB]
     user_row = await get_user_by_id(db, user["id"])
     if user_row is None:
         raise AppError(401, "not_authenticated", "User does not exist.")

@@ -14,7 +14,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-
 ROOT_DIR = Path(__file__).resolve().parent.parent
 READ_ONLY_PREFIXES = ("select", "with", "pragma", "explain")
 

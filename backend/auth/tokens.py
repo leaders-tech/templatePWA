@@ -6,8 +6,8 @@ Copy the helper style here when you add another small token utility.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
 import hmac
+from datetime import UTC, datetime, timedelta
 from secrets import token_urlsafe
 from typing import Any
 

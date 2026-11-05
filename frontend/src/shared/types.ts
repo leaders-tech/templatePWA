@@ -36,6 +36,4 @@ export type ApiFail = {
 export type ApiResponse<T> = ApiOk<T> | ApiFail;
 
 export type WsMessage =
-  | { type: "ws.ready"; user_id: number; connections: number }
-  | { type: "pong" }
-  | { type: "notes.changed"; note?: Note; note_id?: number };
+  { type: "ws.ready"; user_id: number; connections: number } | { type: "pong" } | { type: "notes.changed"; note?: Note; note_id?: number };

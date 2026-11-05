@@ -11,7 +11,7 @@ from time import perf_counter
 
 from aiohttp import web
 
-from backend.config import Settings
+from backend.app_keys import CURRENT_USER, SETTINGS
 from backend.http.json_api import AppError, fail
 
 ERROR_LOGGER = logging.getLogger("backend.error")
@@ -20,7 +20,7 @@ EXPECTED_ANONYMOUS_401_PATHS = {"/api/auth/me", "/api/auth/refresh"}
 
 
 def add_cors_headers(request: web.Request, response: web.StreamResponse) -> web.StreamResponse:
-    settings: Settings = request.app["settings"]
+    settings = request.app[SETTINGS]
     origin = request.headers.get("Origin", "").rstrip("/")
     # Production stays same-origin behind a reverse proxy. These CORS headers are only for localhost-style dev splits.
     if settings.mode != "prod" and origin in settings.allowed_origins:
@@ -50,9 +50,9 @@ async def error_middleware(request: web.Request, handler):
 async def request_logging_middleware(request: web.Request, handler):
     started_at = perf_counter()
     response = await handler(request)
-    settings: Settings = request.app["settings"]
+    settings = request.app[SETTINGS]
     duration_ms = round((perf_counter() - started_at) * 1000)
-    user = request.get("current_user")
+    user = request.get(CURRENT_USER)
     user_part = f" user={user['id']}" if isinstance(user, dict) and "id" in user else ""
     message = f"{request.method} {request.path} {response.status} {duration_ms}ms{user_part}"
 
@@ -75,7 +75,7 @@ async def cors_middleware(request: web.Request, handler):
 
 
 def require_allowed_origin(request: web.Request) -> None:
-    settings: Settings = request.app["settings"]
+    settings = request.app[SETTINGS]
     origin = request.headers.get("Origin")
     # This is only a small same-site check when Origin is present. SameSite=Lax cookies and JSON-only POST endpoints
     # are the main simplified CSRF barrier in this template, not this helper alone.

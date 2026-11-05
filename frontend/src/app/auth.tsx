@@ -13,7 +13,6 @@ type AuthContextValue = {
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  reloadUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -28,8 +27,11 @@ async function loadCurrentUser(): Promise<User | null> {
         await postJson<{ user: User }>("/auth/refresh");
         const refreshed = await postJson<{ user: User }>("/auth/me");
         return refreshed.user;
-      } catch {
-        return null;
+      } catch (refreshError) {
+        if (refreshError instanceof ApiError && refreshError.status === 401) {
+          return null;
+        }
+        throw refreshError;
       }
     }
     throw error;
@@ -39,6 +41,7 @@ async function loadCurrentUser(): Promise<User | null> {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const didLoadSession = useRef(false);
 
   useEffect(() => {
@@ -48,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     didLoadSession.current = true;
     loadCurrentUser()
       .then(setUser)
+      .catch((loadError) => setError(loadError instanceof Error ? loadError.message : "Could not load your session."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -57,20 +61,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       async login(username: string, password: string) {
         const data = await postJson<{ user: User }>("/auth/login", { username, password });
+        setError("");
         setUser(data.user);
       },
       async logout() {
         await postJson<{ logged_out: boolean }>("/auth/logout");
         setUser(null);
       },
-      async reloadUser() {
-        setUser(await loadCurrentUser());
-      },
     }),
     [loading, user],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {error ? (
+        <p role="alert" className="bg-rose-50 px-4 py-3 text-rose-700">
+          {error}
+        </p>
+      ) : null}
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

@@ -18,7 +18,6 @@ const anonymousValue = {
   loading: false,
   login: vi.fn().mockResolvedValue(undefined),
   logout: vi.fn(),
-  reloadUser: vi.fn(),
 };
 
 const adminUser: User = {

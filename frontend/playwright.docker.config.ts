@@ -20,7 +20,8 @@ if (!frontendUrl) {
 }
 
 export default defineConfig({
-  testDir: "./tests/e2e",
+  testDir: "./tests",
+  testMatch: ["e2e/*.spec.ts", "docker/*.spec.ts"],
   use: {
     baseURL: frontendUrl,
   },

@@ -1,7 +1,7 @@
 # This file builds the production frontend image for Docker and Dokploy.
 # Edit this file when frontend build steps, nginx runtime setup, or container ports change.
 # Copy a stage pattern here when you add another small static frontend image.
-FROM node:25.6-alpine AS builder
+FROM node:26-alpine AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}
 
 RUN npm run build
 
-FROM nginx:1.29.5-alpine-slim AS runtime
+FROM nginx:1.30.6-alpine-slim AS runtime
 
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY --from=builder /app/dist /usr/share/nginx/html

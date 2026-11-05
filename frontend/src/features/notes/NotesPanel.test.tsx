@@ -34,4 +34,29 @@ describe("NotesPanel", () => {
     await waitFor(() => expect(screen.getByText("New note")).toBeInTheDocument());
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  it("keeps the draft and displays a failed save", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, data: { notes: [] } })))
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    render(<NotesPanel refreshKey={0} socketStatus="connected" />);
+    await screen.findByText("No notes yet.");
+    await userEvent.type(screen.getByPlaceholderText("Write a short note"), "Keep my draft");
+    await userEvent.click(screen.getByRole("button", { name: "Add note" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not reach the server.");
+    expect(screen.getByPlaceholderText("Write a short note")).toHaveValue("Keep my draft");
+  });
+
+  it("keeps the note and displays a failed delete", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, data: { notes: [{ id: 1, text: "Keep this note" }] } })))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ok: false, error: { code: "server_error", message: "Could not delete the note." } }), { status: 500 }),
+      );
+    render(<NotesPanel refreshKey={0} socketStatus="connected" />);
+    await screen.findByText("Keep this note");
+    await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not delete the note.");
+    expect(screen.getByText("Keep this note")).toBeInTheDocument();
+  });
 });

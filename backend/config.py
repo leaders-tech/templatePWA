@@ -13,7 +13,6 @@ from urllib.parse import urlsplit, urlunsplit
 
 from dotenv import load_dotenv
 
-
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_COOKIE_SECRET = "change-this-secret"
 
@@ -91,5 +90,12 @@ def parse_bool_env(value: str | None, *, default: bool) -> bool:
 
 
 def validate_settings(settings: Settings) -> None:
-    if settings.mode == "prod" and settings.cookie_secret == DEFAULT_COOKIE_SECRET:
-        raise ValueError("Refusing to start in prod with the default COOKIE_SECRET. Set a real secret in .env or your deploy env.")
+    if settings.mode not in {"dev", "test", "prod"}:
+        raise ValueError("APP_MODE must be dev, test, or prod.")
+    if settings.mode == "prod":
+        if settings.cookie_secret in {DEFAULT_COOKIE_SECRET, "local-docker-secret", "agent-secret", "playwright-secret", "playwright-docker-secret"}:
+            raise ValueError("Refusing to start in prod with a default COOKIE_SECRET. Set a real secret in your deploy environment.")
+        if len(settings.cookie_secret.strip()) < 32:
+            raise ValueError("Production COOKIE_SECRET must contain at least 32 characters. Use a long random secret.")
+        if urlsplit(settings.frontend_origin).scheme != "https":
+            raise ValueError("Production FRONTEND_ORIGIN must use https so secure login cookies work.")

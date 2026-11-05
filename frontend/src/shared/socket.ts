@@ -21,14 +21,32 @@ export function createUserSocket(options: CreateSocketOptions) {
   let reconnectDelayMs = 1500;
 
   const connect = () => {
+    reconnectTimer = null;
     options.onStatus("connecting");
     ws = new WebSocket(getWsUrl());
     ws.onopen = () => {
+      if (stopped) {
+        ws?.close();
+        return;
+      }
       reconnectDelayMs = 1500;
       options.onStatus("connected");
     };
-    ws.onmessage = (event) => options.onMessage(JSON.parse(event.data) as WsMessage);
-    ws.onerror = () => console.warn("WebSocket error.");
+    ws.onmessage = (event) => {
+      let message: WsMessage;
+      try {
+        message = JSON.parse(event.data) as WsMessage;
+      } catch {
+        console.warn("Ignored an invalid WebSocket message.");
+        return;
+      }
+      options.onMessage(message);
+    };
+    ws.onerror = () => {
+      if (!stopped) {
+        console.warn("WebSocket error.");
+      }
+    };
     ws.onclose = () => {
       options.onStatus("disconnected");
       if (!stopped) {
@@ -38,18 +56,23 @@ export function createUserSocket(options: CreateSocketOptions) {
     };
   };
 
-  connect();
+  // React StrictMode may clean up an effect immediately; avoid opening a socket for that discarded mount.
+  reconnectTimer = window.setTimeout(connect, 0);
 
   return {
     sendPing() {
-      ws?.send(JSON.stringify({ type: "ping" }));
+      if (ws?.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "ping" }));
+      }
     },
     stop() {
       stopped = true;
       if (reconnectTimer !== null) {
         window.clearTimeout(reconnectTimer);
       }
-      ws?.close();
+      if (ws?.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
     },
   };
 }

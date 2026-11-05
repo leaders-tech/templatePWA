@@ -7,9 +7,9 @@ Copy the helper style here when you add another small SQLite codec helper.
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
-from typing import Iterator
 
 
 def adapt_datetime_utc(value: datetime) -> str:

@@ -34,6 +34,9 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       VitePWA({
         registerType: "autoUpdate",
+        workbox: {
+          navigateFallbackDenylist: [/^\/api(?:\/|$)/, /^\/ws(?:\/|$)/],
+        },
         manifest: {
           name: "Template PWA",
           short_name: "TemplatePWA",
@@ -78,7 +81,7 @@ export default defineConfig(({ mode }) => {
       globals: true,
       environment: "jsdom",
       setupFiles: "./vitest.setup.ts",
-      exclude: ["tests/e2e/**", "node_modules/**", "dist/**"],
+      exclude: ["tests/**", "node_modules/**", "dist/**"],
     },
   };
 });

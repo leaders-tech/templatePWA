@@ -3,7 +3,7 @@
 # Copy a stage pattern here when you add another small Python service image.
 FROM python:3.14-slim-trixie AS builder
 
-COPY --from=ghcr.io/astral-sh/uv:0.10.4 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /uvx /bin/
 
 ENV UV_LINK_MODE=copy \
     UV_PROJECT_ENVIRONMENT=/opt/venv

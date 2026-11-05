@@ -33,7 +33,11 @@ class WebSocketHub:
             if ws.closed:
                 self.remove(user_id, ws)
                 continue
-            await ws.send_json(message)
+            try:
+                await ws.send_json(message)
+            except ConnectionError:
+                # The browser went away while we were sending. Forget this socket and keep going.
+                self.remove(user_id, ws)
 
     def count_for_user(self, user_id: int) -> int:
         return len(self._connections.get(user_id, ()))

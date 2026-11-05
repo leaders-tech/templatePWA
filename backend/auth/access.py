@@ -10,21 +10,21 @@ from typing import Any
 
 from aiohttp import web
 
+from backend.app_keys import CURRENT_USER, SETTINGS
 from backend.auth.tokens import read_access_token
-from backend.config import Settings
 from backend.http.json_api import AppError
 
 
 def current_user(request: web.Request) -> dict[str, Any] | None:
-    cached_user = request.get("current_user")
+    cached_user = request.get(CURRENT_USER)
     if cached_user is not None:
         return cached_user
-    settings: Settings = request.app["settings"]
+    settings = request.app[SETTINGS]
     token = request.cookies.get(settings.access_cookie_name)
     if not token:
         return None
     user = read_access_token(settings, token)
-    request["current_user"] = user
+    request[CURRENT_USER] = user
     return user
 
 

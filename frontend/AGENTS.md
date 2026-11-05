@@ -1,5 +1,16 @@
 # Frontend Agent Notes
 
+## Template lifecycle and current ownership
+
+- This frontend is a starter template. Nothing in its demo pages, features, design, branding, assets, dependencies, or tooling must be preserved for its own sake.
+- Replace or remove starter UI and flows to build what the user requests. The defaults below do not require retaining the template's product or architecture.
+- With every application feature request, update this file and the root `AGENTS.md` in the same change. Identify remaining template pages/features and the parts that now belong to the user's application.
+- Remaining template: all of `frontend/`, including the home/login/dashboard/admin pages, notes panel, auth/socket examples, PWA branding/assets, and tests.
+- User application: none yet.
+- When the transition is complete, remove template inventories and all template-specific wording and instructions here. Keep instructions that describe the user's frontend.
+
+## Working defaults
+
 - This frontend is for students, so keep flows obvious and easy to inspect in a browser.
 - Keep components small and readable — one file, one job.
 - Use plain React state and small hooks. Do not add state managers (no Redux, Zustand, Jotai, etc.).
@@ -27,7 +38,8 @@
 ## How to call the backend
 
 - Import `postJson` from `src/shared/api.ts` and call it with the route path and a plain object.
-- Never write a raw `fetch` for backend routes — `postJson` handles cookie auth and error wrapping.
+- Never write a raw `fetch` for backend routes — `postJson` handles cookie auth, error wrapping, and one automatic
+  `/api/auth/refresh` retry when the short-lived login cookie has expired.
 - If the server is not running or returns an error, `postJson` throws an `ApiError`.
   Catch it and show `error.message` to the user so they know what went wrong.
 
@@ -35,17 +47,20 @@
 
 - Call `useAuth()` from `src/app/auth.tsx` to read the current logged-in user and the logout function.
 - A protected page should redirect to `/login` when `useAuth().user` is `null`.
-- Do not call `/api/auth/me` yourself — `AuthProvider` in `App.tsx` loads the session on startup automatically.
+- Do not call `/api/auth/me` yourself — `AuthProvider` from `src/app/auth.tsx` (wrapped around the app in `src/main.tsx`)
+  loads the session on startup automatically.
 
 ## Real-time updates (WebSocket)
 
 - WebSocket connection logic lives in `src/shared/socket.ts`.
-- The socket connects after login and disconnects on logout — do not manage the connection manually.
-- To react to live server events, add a `useEffect` listener in the component that needs live data.
+- `src/pages/DashboardPage.tsx` shows the pattern: call `createUserSocket()` inside a `useEffect` while a user is
+  logged in and call `socket.stop()` in the cleanup. The helper reconnects by itself.
 - Check the browser console for WebSocket errors after any auth or routing change.
 
 ## Tests — always keep them green
 
+- Lint with Oxlint (`npm run lint`). Its built-in React rules check Hooks and Fast Refresh; TypeScript checks app and unit-test types during `npm run build`.
+- Keep `.oxlintrc.json` small and keep both Hooks rules enabled when updating tools.
 - Unit tests use Vitest + React Testing Library.
   Run: `cd frontend && npm test`
 - End-to-end tests use Playwright and live in `frontend/tests/e2e/`.

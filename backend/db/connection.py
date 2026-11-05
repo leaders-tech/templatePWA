@@ -1,4 +1,4 @@
-"""Open SQLite connections and provide small UTC time helpers.
+"""Open SQLite connections and provide a small UTC time helper.
 
 Edit this file when DB connection setup, PRAGMA values, or shared time helpers change.
 Copy the helper style here when you add another small DB-wide utility.
@@ -12,16 +12,8 @@ from pathlib import Path
 import aiosqlite
 
 
-def utc_now() -> datetime:
-    return datetime.now(tz=UTC)
-
-
 def utc_now_text() -> str:
-    return utc_now().isoformat(timespec="seconds")
-
-
-def parse_utc_text(value: str) -> datetime:
-    return datetime.fromisoformat(value)
+    return datetime.now(tz=UTC).isoformat(timespec="seconds")
 
 
 async def open_db(path: Path) -> aiosqlite.Connection:

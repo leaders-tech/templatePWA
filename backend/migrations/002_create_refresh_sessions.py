@@ -6,7 +6,6 @@ Create a new migration file instead when you need another schema change.
 
 from yoyo import step
 
-
 steps = [
     step(
         """

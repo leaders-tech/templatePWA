@@ -4,7 +4,7 @@ Edit this file when note UI, note API calls, or note error handling changes.
 Copy this file as a starting point when you add another small logged-in feature panel.
 */
 
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { postJson } from "../../shared/api";
 import type { Note } from "../../shared/types";
 
@@ -20,21 +20,27 @@ export function NotesPanel({ refreshKey, socketStatus }: NotesPanelProps) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const loadNotes = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const data = await postJson<{ notes: Note[] }>("/notes/list");
-      setNotes(data.notes);
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Could not load notes.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    void loadNotes();
+    let cancelled = false;
+    postJson<{ notes: Note[] }>("/notes/list")
+      .then((data) => {
+        if (!cancelled) {
+          setNotes(data.notes);
+        }
+      })
+      .catch((loadError) => {
+        if (!cancelled) {
+          setError(loadError instanceof Error ? loadError.message : "Could not load notes.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [refreshKey]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -43,21 +49,31 @@ export function NotesPanel({ refreshKey, socketStatus }: NotesPanelProps) {
     if (!text) {
       return;
     }
-    const data = await postJson<{ note: Note }>("/notes/save", {
-      id: editingId,
-      text,
-    });
-    setDraft("");
-    setEditingId(null);
-    setNotes((current) => {
-      const next = current.filter((item) => item.id !== data.note.id);
-      return [data.note, ...next];
-    });
+    setError("");
+    try {
+      const data = await postJson<{ note: Note }>("/notes/save", {
+        id: editingId,
+        text,
+      });
+      setDraft("");
+      setEditingId(null);
+      setNotes((current) => {
+        const next = current.filter((item) => item.id !== data.note.id);
+        return [data.note, ...next];
+      });
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not save the note.");
+    }
   };
 
   const onDelete = async (id: number) => {
-    await postJson<{ deleted: boolean; id: number }>("/notes/delete", { id });
-    setNotes((current) => current.filter((note) => note.id !== id));
+    setError("");
+    try {
+      await postJson<{ deleted: boolean; id: number }>("/notes/delete", { id });
+      setNotes((current) => current.filter((note) => note.id !== id));
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Could not delete the note.");
+    }
   };
 
   const onEdit = (note: Note) => {
@@ -101,7 +117,11 @@ export function NotesPanel({ refreshKey, socketStatus }: NotesPanelProps) {
         </div>
       </form>
 
-      {error ? <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {error}
+        </p>
+      ) : null}
 
       <div className="mt-6 space-y-3">
         {loading ? <p className="text-slate-600">Loading notes...</p> : null}

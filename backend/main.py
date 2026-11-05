@@ -10,6 +10,7 @@ import logging
 
 from aiohttp import web
 
+from backend.app_keys import DB, SETTINGS, WS_HUB
 from backend.auth.routes import setup_auth_routes
 from backend.config import Settings, load_settings, validate_settings
 from backend.db.connection import open_db
@@ -25,7 +26,7 @@ LOGGER = logging.getLogger("backend.app")
 
 
 async def on_startup(app: web.Application) -> None:
-    settings: Settings = app["settings"]
+    settings = app[SETTINGS]
     LOGGER.info(
         "Starting backend mode=%s host=%s port=%s db=%s frontend=%s debug_logs=%s",
         settings.mode,
@@ -38,15 +39,15 @@ async def on_startup(app: web.Application) -> None:
     LOGGER.info("Running database migrations.")
     run_migrations(settings.db_path, settings.migrations_path)
     LOGGER.info("Database migrations finished.")
-    app["db"] = await open_db(settings.db_path)
+    app[DB] = await open_db(settings.db_path)
     if settings.mode == "dev":
         LOGGER.info("Seeding dev users if they are missing.")
-    await seed_dev_data(app["db"], settings)
+    await seed_dev_data(app[DB], settings)
     LOGGER.info("Backend startup finished.")
 
 
 async def on_cleanup(app: web.Application) -> None:
-    db = app.get("db")
+    db = app.get(DB)
     if db is not None:
         await db.close()
         LOGGER.info("Database connection closed.")
@@ -57,8 +58,8 @@ def create_app(settings: Settings | None = None) -> web.Application:
     validate_settings(resolved_settings)
     configure_logging(resolved_settings)
     app = web.Application(middlewares=[request_logging_middleware, error_middleware, cors_middleware])
-    app["settings"] = resolved_settings
-    app["ws_hub"] = WebSocketHub()
+    app[SETTINGS] = resolved_settings
+    app[WS_HUB] = WebSocketHub()
 
     setup_auth_routes(app)
     setup_api_routes(app)

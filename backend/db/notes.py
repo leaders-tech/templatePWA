@@ -31,7 +31,7 @@ async def list_notes(db: aiosqlite.Connection, user_id: int) -> list[dict[str, A
     return [row_to_note(row) for row in rows]
 
 
-async def save_note(db: aiosqlite.Connection, user_id: int, text: str, note_id: int | None = None) -> dict[str, Any]:
+async def save_note(db: aiosqlite.Connection, user_id: int, text: str, note_id: int | None = None) -> dict[str, Any] | None:
     now = utc_now_text()
     if note_id is None:
         cursor = await db.execute(
@@ -45,26 +45,17 @@ async def save_note(db: aiosqlite.Connection, user_id: int, text: str, note_id: 
     else:
         cursor = await db.execute(
             """
-            INSERT INTO notes (id, user_id, text, created_at, updated_at)
-            VALUES (
-                ?,
-                ?,
-                ?,
-                COALESCE((SELECT created_at FROM notes WHERE id = ? AND user_id = ?), ?),
-                ?
-            )
-            ON CONFLICT(id) DO UPDATE SET
-                text = excluded.text,
-                updated_at = excluded.updated_at
-            WHERE notes.user_id = excluded.user_id
+            UPDATE notes
+            SET text = ?, updated_at = ?
+            WHERE id = ? AND user_id = ?
             RETURNING id, user_id, text, created_at, updated_at
             """,
-            (note_id, user_id, text, note_id, user_id, now, now),
+            (text, now, note_id, user_id),
         )
     row = await cursor.fetchone()
     await db.commit()
     if row is None:
-        raise ValueError("Note was not saved.")
+        return None
     return row_to_note(row)
 
 
