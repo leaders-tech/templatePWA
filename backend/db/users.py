@@ -84,3 +84,15 @@ async def create_user_if_missing(db: aiosqlite.Connection, username: str, passwo
         (username, password_hash, int(is_admin), now, now),
     )
     await db.commit()
+
+
+async def set_user_password_and_admin(db: aiosqlite.Connection, user_id: int, password_hash: str, is_admin: bool) -> None:
+    await db.execute(
+        """
+        UPDATE users
+        SET password_hash = ?, is_admin = ?, updated_at = ?
+        WHERE id = ?
+        """,
+        (password_hash, int(is_admin), utc_now_text(), user_id),
+    )
+    await db.commit()

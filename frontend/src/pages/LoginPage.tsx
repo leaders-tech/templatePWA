@@ -4,7 +4,7 @@ Edit this file when login UI, login errors, or login redirect behavior changes.
 Copy this file as a starting point when you add another simple form page.
 */
 
-import { useState, type FormEvent } from "react";
+import { useActionState, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../app/auth";
 
@@ -13,33 +13,26 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  // React 19 form action: `error` is what the action returned last time, `busy` is true while it runs.
+  const [error, loginAction, busy] = useActionState(async () => {
+    try {
+      await login(username, password);
+      navigate("/dashboard");
+      return "";
+    } catch (submitError) {
+      return submitError instanceof Error ? submitError.message : "Login failed.";
+    }
+  }, "");
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setBusy(true);
-    setError("");
-    try {
-      await login(username, password);
-      navigate("/dashboard");
-    } catch (submitError) {
-      const message = submitError instanceof Error ? submitError.message : "Login failed.";
-      setError(message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
     <section className="mx-auto max-w-md rounded-3xl border border-slate-200/80 bg-white/85 p-8 shadow-lg shadow-slate-200/70">
       <h2 className="text-2xl font-semibold text-slate-900">Login</h2>
       <p className="mt-2 text-sm text-slate-600">In dev mode, example users are shown on the home page. Enter them here yourself if you want to test login.</p>
-      <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+      <form className="mt-6 space-y-4" action={loginAction}>
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-slate-700">Username</span>
           <input
@@ -57,7 +50,11 @@ export function LoginPage() {
             value={password}
           />
         </label>
-        {error ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p> : null}
+        {error ? (
+          <p role="alert" className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {error}
+          </p>
+        ) : null}
         <button className="w-full rounded-2xl bg-slate-900 px-4 py-3 font-semibold text-white" disabled={busy} type="submit">
           {busy ? "Logging in..." : "Login"}
         </button>

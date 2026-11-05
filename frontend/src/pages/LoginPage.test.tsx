@@ -74,4 +74,23 @@ describe("LoginPage", () => {
 
     expect(screen.queryByText("Login")).not.toBeInTheDocument();
   });
+
+  it("shows the login error and keeps the username", async () => {
+    const login = vi.fn().mockRejectedValue(new Error("Wrong username or password."));
+    render(
+      <MemoryRouter>
+        <AuthContext.Provider value={{ ...anonymousValue, login }}>
+          <LoginPage />
+        </AuthContext.Provider>
+      </MemoryRouter>,
+    );
+
+    await userEvent.type(screen.getByLabelText("Username"), "admin");
+    await userEvent.type(screen.getByLabelText("Password"), "wrong");
+    await userEvent.click(screen.getByRole("button", { name: "Login" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Wrong username or password.");
+    expect(screen.getByLabelText("Username")).toHaveValue("admin");
+    expect(screen.getByRole("button", { name: "Login" })).toBeEnabled();
+  });
 });

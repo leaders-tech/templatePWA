@@ -100,10 +100,37 @@ Backend:
 Do not solve non-root runtime requirements by adding Compose `user`. tlfpaas
 rejects that field. Set `USER` in the Dockerfile final stage instead.
 
+## What tlfpaas Sets And Needs
+
+Every push to GitHub starts a deploy through a GitHub webhook. tlfpaas fetches the repo, validates
+`docker-compose.yml`, builds the images, and starts the containers.
+
+tlfpaas injects these runtime values into every service, so they do not need to be committed:
+
+```env
+APP_MODE=prod
+DB_PATH=/data/app.sqlite3
+FRONTEND_ORIGIN=https://<project host>
+VITE_BACKEND_URL=/api
+```
+
+Required secrets (Secrets page at https://deploy.tlfedu.tech/my/projects, then `Redeploy now`):
+
+- `COOKIE_SECRET` — at least 32 random characters;
+- `ADMIN_PASSWORD` — at least 12 characters; the backend creates user `admin` with it and resets the admin password
+  when it changes.
+
+The tlfpaas Secrets page shows a "required" hint for secret-looking `${...}` values in `docker-compose.yml`, so keep
+both secrets referenced there.
+
+Repository names must use lowercase letters, numbers, and hyphens (no underscores) and must not use platform names
+such as `admin`, `deploy`, `files`, `logs`, or `test`. Student guides: https://deploy.tlfedu.tech/guides/students/start.
+
 ## `.docker.env` Contract
 
 `.docker.env` and `.docker.env.example` are student-facing local Docker config
-files. They may contain local placeholder values.
+files. They may contain local placeholder values. `.docker.env` is gitignored; tlfpaas
+uses its own injected values and Secrets instead.
 
 Current important values:
 
@@ -114,8 +141,8 @@ FRONTEND_ORIGIN=http://localhost:5105
 VITE_BACKEND_URL=/api
 ```
 
-`COOKIE_SECRET=local-docker-secret` is only a local placeholder. In tlfpaas
-production, configure `COOKIE_SECRET` in the student Secrets UI and click
+`COOKIE_SECRET=local-docker-secret` and `ADMIN_PASSWORD=admin` are only local placeholders. In tlfpaas
+production, configure `COOKIE_SECRET` and `ADMIN_PASSWORD` in the student Secrets UI and click
 `Redeploy now`.
 
 If adding frontend build-time config, use only public client-visible prefixes:

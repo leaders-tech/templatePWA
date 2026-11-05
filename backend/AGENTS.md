@@ -14,6 +14,8 @@
 - This backend is for students, so code should be obvious on first reading.
 - Use `aiohttp`, plain functions, and small modules.
 - Keep all SQLite access inside `backend/db`.
+- Store uploaded files and images as SQLite `BLOB`s, as described in `backend/db/AGENTS.md`.
+- The `admin` user is created and kept in sync with `ADMIN_PASSWORD` by `ensure_admin` in `backend/db/seed.py`.
 - Store timestamps as UTC ISO strings and convert explicitly in Python.
 - Use `STRICT` tables, `foreign_keys = ON`, and `journal_mode = WAL`.
 - Return only the shared JSON envelope shape.

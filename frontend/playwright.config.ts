@@ -49,6 +49,7 @@ export default defineConfig({
         APP_PORT: backendPort,
         DB_PATH: dbPath,
         COOKIE_SECRET: requireEnv("E2E_COOKIE_SECRET"),
+        ADMIN_PASSWORD: "admin",
         FRONTEND_ORIGIN: frontendUrl,
         UV_CACHE_DIR: uvCacheDir,
       },

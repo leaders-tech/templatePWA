@@ -22,20 +22,40 @@ export function HomePage() {
         </div>
       </div>
       <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-8 shadow-lg shadow-slate-200/60">
-        <h3 className="text-lg font-semibold text-slate-900">Default users in dev</h3>
-        <div className="mt-4 space-y-3 text-sm text-slate-700">
-          <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="font-medium">Normal user</p>
-            <p>Username: user</p>
-            <p>Password: user</p>
-          </div>
-          <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="font-medium">Admin user</p>
-            <p>Username: admin</p>
-            <p>Password: admin</p>
-          </div>
-        </div>
+        {import.meta.env.DEV ? <DevUsers /> : <DeployedLoginHint />}
       </div>
     </section>
+  );
+}
+
+// Vite sets import.meta.env.DEV only for `make front`. Built apps (Docker, tlfpaas) never show demo passwords.
+function DevUsers() {
+  return (
+    <>
+      <h3 className="text-lg font-semibold text-slate-900">Default users in dev</h3>
+      <div className="mt-4 space-y-3 text-sm text-slate-700">
+        <div className="rounded-2xl bg-slate-50 p-4">
+          <p className="font-medium">Normal user</p>
+          <p>Username: user</p>
+          <p>Password: user</p>
+        </div>
+        <div className="rounded-2xl bg-slate-50 p-4">
+          <p className="font-medium">Admin user</p>
+          <p>Username: admin</p>
+          <p>Password: ADMIN_PASSWORD from .env (admin by default)</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function DeployedLoginHint() {
+  return (
+    <>
+      <h3 className="text-lg font-semibold text-slate-900">How to log in</h3>
+      <p className="mt-4 text-sm text-slate-700">
+        Log in as <strong>admin</strong> with the password from the <code>ADMIN_PASSWORD</code> setting.
+      </p>
+    </>
   );
 }

@@ -34,6 +34,8 @@ export COMPOSE_PROJECT_NAME="${E2E_COMPOSE_PROJECT_NAME}"
 export APP_MODE="${E2E_APP_MODE}"
 export APP_DEBUG_LOGS="${E2E_APP_DEBUG_LOGS}"
 export COOKIE_SECRET="${E2E_COOKIE_SECRET}"
+# Browser tests log in as admin/admin, so the test stack always uses that password.
+export ADMIN_PASSWORD="admin"
 export FRONTEND_ORIGIN="${E2E_FRONTEND_ORIGIN}"
 export VITE_BACKEND_URL="${E2E_VITE_BACKEND_URL}"
 export GATEWAY_PORT="${E2E_GATEWAY_PORT}"

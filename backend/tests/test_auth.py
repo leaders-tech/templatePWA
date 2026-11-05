@@ -215,11 +215,11 @@ async def test_dev_seed_only_creates_missing_users(tmp_path, monkeypatch) -> Non
 
     try:
         await on_startup(app)
-        assert calls == ["user", "admin"]
+        assert calls == ["admin", "user"]
         await seed_dev_data(app[DB], settings)
         users = await list_users(app[DB])
-        assert [user["username"] for user in users] == ["user", "admin"]
-        assert calls == ["user", "admin"]
+        assert [user["username"] for user in users] == ["admin", "user"]
+        assert calls == ["admin", "user"]
     finally:
         await on_cleanup(app)
 

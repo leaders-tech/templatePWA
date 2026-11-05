@@ -13,6 +13,7 @@ services:
       APP_PORT: 8081
       DB_PATH: ${DB_PATH}
       COOKIE_SECRET: ${COOKIE_SECRET}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
     expose:
       - "8081"

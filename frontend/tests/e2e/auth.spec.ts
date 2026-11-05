@@ -134,3 +134,10 @@ test("expired access cookie is refreshed when saving a note without a page reloa
   await note.getByRole("button", { name: "Delete" }).click();
   await expect(note).toHaveCount(0);
 });
+
+test("unknown address shows the not found page", async ({ page }) => {
+  await page.goto("/no-such-page");
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  await page.getByRole("link", { name: "Go to home page" }).click();
+  await expect(page).toHaveURL("/");
+});

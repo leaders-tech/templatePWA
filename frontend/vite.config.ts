@@ -45,19 +45,12 @@ export default defineConfig(({ mode }) => {
           background_color: "#eff6ff",
           display: "standalone",
           start_url: "/",
+          // These PNG files come from public/icon.svg. Run `npm run icons` after changing the SVG (see icon/AGENTS.md).
           icons: [
-            {
-              src: "/pwa-192.svg",
-              sizes: "192x192",
-              type: "image/svg+xml",
-              purpose: "any",
-            },
-            {
-              src: "/pwa-512.svg",
-              sizes: "512x512",
-              type: "image/svg+xml",
-              purpose: "any",
-            },
+            { src: "/pwa-64x64.png", sizes: "64x64", type: "image/png" },
+            { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+            { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png" },
+            { src: "/maskable-icon-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
           ],
         },
       }),

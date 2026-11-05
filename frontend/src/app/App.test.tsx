@@ -58,6 +58,11 @@ describe("App routes", () => {
     expect(screen.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
   });
 
+  it("shows the not found page for unknown addresses", () => {
+    renderApp("/no-such-page", null);
+    expect(screen.getByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+  });
+
   it("shows a logout failure while keeping the current page", async () => {
     const logout = vi.fn().mockRejectedValueOnce(new Error("Could not reach the server."));
     renderApp("/dashboard", userValue, logout);

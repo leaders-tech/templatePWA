@@ -4,7 +4,7 @@ Edit this file when note UI, note API calls, or note error handling changes.
 Copy this file as a starting point when you add another small logged-in feature panel.
 */
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { postJson } from "../../shared/api";
 import type { Note } from "../../shared/types";
 
@@ -43,11 +43,12 @@ export function NotesPanel({ refreshKey, socketStatus }: NotesPanelProps) {
     };
   }, [refreshKey]);
 
-  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  // React 19 form action: it returns the error text to show, and `saving` is true while it runs.
+  // The textarea stays controlled, so a failed save keeps the draft.
+  const [saveError, saveAction, saving] = useActionState(async () => {
     const text = draft.trim();
     if (!text) {
-      return;
+      return "";
     }
     setError("");
     try {
@@ -61,10 +62,12 @@ export function NotesPanel({ refreshKey, socketStatus }: NotesPanelProps) {
         const next = current.filter((item) => item.id !== data.note.id);
         return [data.note, ...next];
       });
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not save the note.");
+      return "";
+    } catch (submitError) {
+      return submitError instanceof Error ? submitError.message : "Could not save the note.";
     }
-  };
+  }, "");
+  const shownError = error || saveError;
 
   const onDelete = async (id: number) => {
     setError("");
@@ -91,7 +94,7 @@ export function NotesPanel({ refreshKey, socketStatus }: NotesPanelProps) {
         <span className="rounded-full bg-slate-100 px-3 py-2 text-sm text-slate-700">WebSocket: {socketStatus}</span>
       </div>
 
-      <form className="mt-5 space-y-3" onSubmit={onSubmit}>
+      <form className="mt-5 space-y-3" action={saveAction}>
         <textarea
           className="min-h-32 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3"
           onChange={(event) => setDraft(event.target.value)}
@@ -99,7 +102,7 @@ export function NotesPanel({ refreshKey, socketStatus }: NotesPanelProps) {
           value={draft}
         />
         <div className="flex gap-3">
-          <button className="rounded-2xl bg-slate-900 px-4 py-3 font-semibold text-white" type="submit">
+          <button className="rounded-2xl bg-slate-900 px-4 py-3 font-semibold text-white disabled:opacity-60" disabled={saving} type="submit">
             {editingId ? "Save note" : "Add note"}
           </button>
           {editingId ? (
@@ -117,9 +120,9 @@ export function NotesPanel({ refreshKey, socketStatus }: NotesPanelProps) {
         </div>
       </form>
 
-      {error ? (
+      {shownError ? (
         <p role="alert" className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {error}
+          {shownError}
         </p>
       ) : null}
 

@@ -15,7 +15,7 @@ from backend.auth.routes import setup_auth_routes
 from backend.config import Settings, load_settings, validate_settings
 from backend.db.connection import open_db
 from backend.db.migrations import run_migrations
-from backend.db.seed import seed_dev_data
+from backend.db.seed import ensure_admin, seed_dev_data
 from backend.http.middleware import cors_middleware, error_middleware, request_logging_middleware
 from backend.http.routes import setup_api_routes
 from backend.logging_config import configure_logging
@@ -40,6 +40,7 @@ async def on_startup(app: web.Application) -> None:
     run_migrations(settings.db_path, settings.migrations_path)
     LOGGER.info("Database migrations finished.")
     app[DB] = await open_db(settings.db_path)
+    await ensure_admin(app[DB], settings)
     if settings.mode == "dev":
         LOGGER.info("Seeding dev users if they are missing.")
     await seed_dev_data(app[DB], settings)

@@ -82,16 +82,20 @@ nvm install 26
 
 Do this once when you first clone the project.
 
-### Step 1 — Download the project
+### Step 1 — Make your own copy and download it
 
-Open a terminal and run:
+1. Open https://github.com/leaders-tech/templatePWA and click **Use this template** → **Create a new repository**.
+2. Name the repository after your project. Use only lowercase letters, numbers, and hyphens, for example
+   `homework-planner`. Do not use underscores (`_`). This name becomes your app address on tlfpaas.
+3. Open a terminal and download **your** repository (put your GitHub login and project name):
 
 ```bash
-git clone https://github.com/leaders-tech/templatePWA.git templatePWA
-cd templatePWA
+git clone https://github.com/your-login/your-project.git
+cd your-project
 ```
 
-`git clone` copies the project to your computer. `cd templatePWA` moves into that folder.
+`git clone` copies the project to your computer. `cd your-project` moves into that folder.
+Now `git push` sends your changes to your own repository, not to the template.
 
 ### Step 2 — Install everything
 
@@ -200,9 +204,10 @@ Important notes:
 | Username | Password |
 |----------|----------|
 | user     | user     |
-| admin    | admin    |
+| admin    | the `ADMIN_PASSWORD` value from `.env` (`admin` by default) |
 
-These accounts exist only in development mode. They are not in production.
+The `user` account exists only in development mode. The `admin` account exists everywhere: in production its password
+comes from the `ADMIN_PASSWORD` secret (see "Deploy to tlfpaas" below).
 
 ---
 
@@ -354,6 +359,35 @@ make test-e2e-docker
 
 ---
 
+## Deploy to tlfpaas
+
+Your app goes online at `https://<project>.tlfedu.tech` through [tlfpaas](https://deploy.tlfedu.tech/guides/students/start).
+
+1. Push your code to GitHub. **Every push starts a new deploy**, so run `make test` before `git push`.
+2. Open https://deploy.tlfedu.tech/my/projects and wait until the deploy says `success`.
+3. Open your project, click **Secrets**, and add two secrets:
+   - `COOKIE_SECRET` — a long random string (at least 32 characters);
+   - `ADMIN_PASSWORD` — the password for the `admin` user (at least 12 characters).
+4. Click **Redeploy now**. The app does not start in production without these secrets.
+5. Open your app and log in as `admin` with your `ADMIN_PASSWORD`.
+
+Forgot the admin password? Change the `ADMIN_PASSWORD` secret and click **Redeploy now** again.
+If something breaks, read the deploy log on the dashboard and the app logs at https://logs.tlfedu.tech.
+
+---
+
+## App icon
+
+The app icon is `frontend/public/icon.svg`. When you know what your app is, ask your coding agent to draw a new icon
+for it (the agent instructions are in `frontend/icon/AGENTS.md`), then make all phone and browser icons from it:
+
+```bash
+cd frontend
+npm run icons
+```
+
+---
+
 ## Docker (optional, for deployment)
 
 Docker packages the app into containers so it runs the same way everywhere.
@@ -499,8 +533,10 @@ The `glob` override in `frontend/package.json` selects 14.0.3 for Workbox's buil
 
 One known dependency issue remains: [`deepmerge` has a low-severity advisory and no patched release](https://github.com/advisories/GHSA-gcqx-w48m-w2h4). It is used by the PWA build tool through Workbox/Rollup. npm may count several parent packages for this one issue. Do not feed untrusted configuration into build tools; check for an upstream fix during future updates.
 
-Validation passed: `make test` (67 backend tests, 25 frontend unit tests, 6 browser tests, Ruff, Oxlint, and the production build) and `make test-e2e-docker` (8 browser tests). A live browser check covered login, note creation/edit/delete, WebSocket connection, and logout with no unexpected console or network errors. npm reported no outdated direct packages; the production npm audit and Python production audit found no known vulnerabilities.
+Validation passed: `make test` (75 backend tests, 28 frontend unit tests, 7 browser tests, Ruff, Oxlint, and the production build) and `make test-e2e-docker` (9 browser tests). A live browser check covered login, note creation/edit/delete, WebSocket connection, and logout with no unexpected console or network errors. npm reported no outdated direct packages; the production npm audit and Python production audit found no known vulnerabilities.
 
 A second pass replaced string app/request keys with typed aiohttp keys in `backend/app_keys.py` (no more `NotAppKeyWarning`), made the browser refresh the short-lived login cookie automatically and repeat the request once, removed expired refresh sessions on login, compared refresh-token hashes in constant time, kept one broken WebSocket from failing a note save, type-checked frontend unit tests during the build, removed unused helpers, and stopped tracking the ignored `.idea/` folder.
 
-Before turning this into a public app, decide how real users will be created, add login rate limits, and choose the required session revocation rules. The current signed access cookie lasts up to two hours, and logout does not revoke a copied access cookie or other open WebSocket connections. The in-memory WebSocket hub assumes one backend process. Offline mode caches the app shell; it does not save notes without a server connection. These are application decisions to revisit as real features replace the demo.
+A third pass added the required `ADMIN_PASSWORD` admin account, the tlfpaas deploy guide, setup through "Use this template", generated PNG/ICO icons from `frontend/public/icon.svg` (`npm run icons`), a 404 page, React 19 `useActionState` forms, a shared Playwright MCP config in `.mcp.json`, and rules for storing uploads as SQLite BLOBs.
+
+Before turning this into a public app, decide how real users will sign up, add login rate limits, and choose the required session revocation rules. The current signed access cookie lasts up to two hours, and logout does not revoke a copied access cookie or other open WebSocket connections. The in-memory WebSocket hub assumes one backend process. Offline mode caches the app shell; it does not save notes without a server connection. These are application decisions to revisit as real features replace the demo.

@@ -33,7 +33,16 @@
 - Pages live in `src/pages/`. Each page file should have a matching `.test.tsx` next to it.
 - Reusable UI pieces used by more than one page go in `src/features/<feature>/` or `src/shared/`.
 - TypeScript types shared across files belong in `src/shared/types.ts` — add new types there.
-- Register a new page route in `src/app/App.tsx` whenever you add a new page file.
+- Register a new page route in `src/app/App.tsx` whenever you add a new page file. Keep the catch-all
+  `<Route path="*">` with `NotFoundPage` as the last route.
+- The app icon source is `public/icon.svg`; see `icon/AGENTS.md` before changing icons or the app name.
+
+## Forms
+
+- Use the React 19 form pattern from `src/pages/LoginPage.tsx` and `src/features/notes/NotesPanel.tsx`:
+  `useActionState` + `<form action={...}>`. The action returns the error text to show, and the hook gives a `pending`
+  flag for disabling the submit button.
+- Keep inputs controlled with `useState` (`value` + `onChange`), so a failed submit keeps what the user typed.
 
 ## How to call the backend
 

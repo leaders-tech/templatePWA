@@ -7,7 +7,7 @@ Do not copy this file. Change it when the project-wide password policy changes.
 from __future__ import annotations
 
 from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError
+from argon2.exceptions import InvalidHashError, VerifyMismatchError
 
 _PASSWORD_HASHER = PasswordHasher()
 
@@ -19,5 +19,5 @@ def hash_password(password: str) -> str:
 def verify_password(password_hash: str, password: str) -> bool:
     try:
         return _PASSWORD_HASHER.verify(password_hash, password)
-    except VerifyMismatchError:
+    except VerifyMismatchError, InvalidHashError:
         return False

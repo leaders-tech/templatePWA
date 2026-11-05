@@ -44,6 +44,11 @@
   redirects before calling the task done.
 - When local dev servers are already running, prefer checking the real dev app first and use tests as a second line of
   verification.
+- For live checks, use the Playwright MCP server from the root `.mcp.json` (Claude Code and other MCP clients load it).
+  Point it at the hidden agent runtime (`make aback` + `make afront`, URL from `.agent.env`). Use `make abrowser` for
+  repeatable scripted checks. If the MCP browser cannot start, the student may need Google Chrome installed.
+- The app icon lives in `frontend/public/icon.svg`. Once the student's app idea is clear, follow
+  `frontend/icon/AGENTS.md` to draw a matching icon and regenerate favicon and phone icons.
 - Every source file should start with a short plain-English header comment or docstring that explains what the file
   does.
 - That file header should also say when the file should be edited, and whether it can be copied as a starting point for
@@ -90,3 +95,20 @@
 - Keep LAN dev mode intentionally simple: prefer the explicit macOS Wi-Fi `en0` helper over generic network auto-detection.
 - Keep LAN ports separate from the default localhost ports unless the user asks otherwise.
 - Do not expand LAN mode into a multi-interface discovery system unless the user asks for broader network support.
+
+## Deploy (tlfpaas)
+
+- Students deploy with tlfpaas. Every push to GitHub starts a deploy through a GitHub webhook. There is no separate CI,
+  so a push with broken code goes straight to the public app. Always run `make test` before `git push`.
+- tlfpaas sets these runtime values itself: `APP_MODE=prod`, `DB_PATH=/data/app.sqlite3`,
+  `FRONTEND_ORIGIN=https://<project host>`, `VITE_BACKEND_URL=/api`. Do not commit `.docker.env` to change them.
+- Production needs two secrets in the tlfpaas Secrets page (https://deploy.tlfedu.tech/my/projects), followed by
+  `Redeploy now`:
+  - `COOKIE_SECRET` — a long random string (32+ characters);
+  - `ADMIN_PASSWORD` — the password of user `admin` (12+ characters). The backend creates `admin` on startup and resets
+    its password when this secret changes.
+  The backend refuses to start in prod without good values. Never print, log, or commit secret values.
+- Where to look when a deploy fails: the deploy log on the dashboard, runtime logs at https://logs.tlfedu.tech, and
+  read-only files (including the SQLite file) at https://files.tlfedu.tech.
+- Platform rules for Docker files: https://deploy.tlfedu.tech/guides/docker/agents and `docs/tlfpaas-autodeploy.md`.
+
